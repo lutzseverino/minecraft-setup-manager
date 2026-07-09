@@ -48,8 +48,7 @@ pub fn resolve_server_manifest(
 
 #[tauri::command]
 pub fn get_install_plan(request: InstallPlanRequest) -> Result<InstallPlan, String> {
-    let manifest_url = crate::app_state::saved_server_manifest_url(&request.server_id)?;
-    let manifest = manifest::fetch::fetch_manifest(&manifest_url)?;
+    let (manifest, _) = saved_manifest(&request.server_id)?;
     let profile = performance_profiles::resolve_profile(&request.profile);
 
     Ok(manifest::build_install_plan(&manifest, &request, profile))
@@ -57,9 +56,19 @@ pub fn get_install_plan(request: InstallPlanRequest) -> Result<InstallPlan, Stri
 
 #[tauri::command]
 pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, String> {
-    let plan = get_install_plan(request)?;
+    let (manifest, manifest_fingerprint) = saved_manifest(&request.server_id)?;
+    let profile = performance_profiles::resolve_profile(&request.profile);
+    let plan = manifest::build_install_plan(&manifest, &request, profile);
     let client_setup = setup::prepare_client(&plan)?;
     let log = minecraft::install_log(&plan, &client_setup);
+    crate::app_state::record_installed_server(
+        &request.server_id,
+        request.launcher,
+        request.profile,
+        client_setup.local_install.game_dir.clone(),
+        &manifest,
+        &manifest_fingerprint,
+    )?;
 
     Ok(InstallProgress {
         phase: InstallPhase::Complete,
@@ -83,4 +92,12 @@ pub fn validate_installation(request: InstallPlanRequest) -> Result<ValidationRe
 #[tauri::command]
 pub fn export_diagnostics() -> Result<DiagnosticBundle, String> {
     minecraft::local_install::export_install_report()
+}
+
+fn saved_manifest(server_id: &str) -> Result<(manifest::schema::SetupManifest, String), String> {
+    let manifest_url = crate::app_state::saved_server_manifest_url(server_id)?;
+    let manifest = manifest::fetch::fetch_manifest(&manifest_url)?;
+    let manifest_fingerprint = manifest::fingerprint::manifest_fingerprint(&manifest)?;
+
+    Ok((manifest, manifest_fingerprint))
 }

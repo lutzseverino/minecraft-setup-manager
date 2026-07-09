@@ -60,6 +60,38 @@ pub fn saved_server_manifest_url(server_id: &str) -> Result<String, String> {
         .ok_or_else(|| "Choose or add a server before starting setup.".to_string())
 }
 
+pub fn record_installed_server(
+    server_id: &str,
+    selected_launcher: LauncherKind,
+    selected_profile: PerformanceProfileId,
+    game_dir: PathBuf,
+    manifest: &SetupManifest,
+    manifest_fingerprint: &str,
+) -> Result<SavedServerEntry, String> {
+    let mut state = read_state()?;
+    let now = timestamp();
+    let record = state
+        .servers
+        .iter_mut()
+        .find(|server| server.id == server_id)
+        .ok_or_else(|| "Choose or add a server before starting setup.".to_string())?;
+
+    record.display_name = manifest.display_name.clone();
+    record.last_installed_at = Some(now);
+    record.selected_launcher = selected_launcher;
+    record.selected_profile = selected_profile;
+    record.game_dir = Some(game_dir);
+    record.installed = Some(InstalledManifestRecord {
+        manifest_id: manifest.id.clone(),
+        manifest_version: manifest.manifest_version.clone(),
+        manifest_fingerprint: manifest_fingerprint.to_string(),
+    });
+    let entry = record.clone().into();
+    write_state(&state)?;
+
+    Ok(entry)
+}
+
 pub fn upsert_checked_server(
     address: &str,
     manifest_url: &str,
