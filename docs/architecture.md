@@ -55,6 +55,11 @@ Minecraft modules may resolve downloads, hashes, Fabric installation,
 `servers.dat`, and validation. They should not own launcher-specific profile
 mutation.
 
+Each saved server owns a namespaced instance root derived from its stable server
+ID. Manifest folder names are display leaves inside that root, never global
+instance identifiers. A resource destination may be replaced only when the
+planner supplies the previous managed file and its current hash still matches.
+
 ## Current Implementation State
 
 The app currently resolves and stores server manifests, consumes manifest-defined
@@ -69,5 +74,8 @@ pass verifies the loader version, launcher profile, setup receipt identity,
 optional server entry, and every selected resource hash. A failed post-check is
 reported as a failed setup and leaves the previous installed-state record intact.
 
-SKlauncher profile writes and manifest trust pinning remain backend-owned modules
-with adapter boundaries.
+SKlauncher and manual profile writes remain launcher-adapter work. Manifest
+trust pinning remains a manifest/app-state concern. Multi-step rollback remains
+a setup orchestration concern; today each owned write is atomic or backed up,
+and a failed run leaves installed state unchanged so the desired state can be
+repaired by rerunning it.

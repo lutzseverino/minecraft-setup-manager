@@ -29,7 +29,7 @@ Current implementation:
 - Uses server-defined setup profiles and explicit resource membership.
 - Builds setup plans from saved manifests.
 - Creates the managed game folder and setup receipt.
-- Installs manifest-pinned Fabric launcher profiles from the official Fabric Meta API.
+- Installs version-pinned Fabric launcher profiles from the live official Fabric Meta API.
 - Creates or updates the official Minecraft Launcher profile.
 - Downloads direct resources with size limits and SHA-256/SHA-512 verification.
 - Resolves pinned Modrinth versions and verifies project, compatibility, file, and hash metadata.
@@ -37,11 +37,15 @@ Current implementation:
 - Verifies loader, profile, receipt, server entry, and every managed file before recording success.
 - Removes stale managed resources when their recorded file is still safe to manage.
 - Validates the local setup slice.
+- Detects the browser language and ships English and Spanish UI copy.
+- Builds natively on macOS, Windows, and Linux through the CI matrix.
 
 Not implemented yet:
 
+- SKlauncher and manual launcher profile adapters.
 - Signed manifests.
 - Plugin-assisted server compatibility checks.
+- Code signing, macOS notarization, and release publishing.
 
 ## Getting Started
 
@@ -100,9 +104,49 @@ and inconsistent resource targets are rejected. Direct downloads require
 public HTTPS and a pinned SHA-256 or SHA-512 hash. Loopback HTTP is accepted only
 when the manifest itself is loaded from the local computer for development.
 
+## Supported Setup
+
+The current installer supports the normal Minecraft Launcher with either
+vanilla Minecraft or a pinned Fabric loader. Server manifests can select pinned
+Modrinth resources, hash-pinned direct files, an isolated game folder, and an
+optional multiplayer server entry.
+
+SKlauncher and manual setup are visible but disabled until their launcher
+adapters can produce and validate complete profiles. The backend also refuses
+plans containing any unsupported action, so a partial setup cannot be reported
+as complete.
+
+## Safety Model
+
+- Manifests describe desired state; they cannot contain commands or scripts.
+- The app applies the exact validated manifest fingerprint that the player reviewed.
+- Every server gets a game folder namespaced by its stable saved-server identity,
+  so two servers cannot collide by choosing the same display folder name.
+- Direct downloads require HTTPS and a pinned SHA-256 or SHA-512 hash.
+- Modrinth files are checked against the requested project, version, Minecraft
+  version, loader, CDN, size, and SHA-512 metadata.
+- Managed writes use isolated folders, path and symlink checks, bounded downloads,
+  temporary files, and atomic replacement where the target format permits it.
+- Existing managed files are removed only while they still match the hash the app
+  recorded. Existing files are replaced only when the app can prove it owns the
+  previous version. User-modified and unowned files are preserved.
+- Setup downloads have a 512 MB per-file limit and a 2 GB total limit per run.
+- The preview names the direct download host or exact Modrinth project/version.
+- Installed state advances only after a full local conformance check passes.
+
+Individual writes are atomic or backed up, but the full multi-step plan is not a
+single filesystem transaction. A failed run keeps the previous installed-state
+record and can be run again to repair the incomplete desired state.
+
+A matching hash proves that a download matches what the server requested; it
+does not prove that a mod is harmless. Mods run inside Minecraft. Until manifest
+signing or trust pinning is implemented, only use setup files from servers you
+already trust.
+
 ## Architecture
 
-- `src/screens` owns wizard composition and UI state.
+- `src/hooks` owns wizard orchestration, command state, and lifecycle resets.
+- `src/screens` owns presentational wizard composition.
 - `src/components/ui` owns foundational shadcn/Radix-style primitives.
 - `src/components/app` owns composed app UI pieces.
 - `src/lib/tauri.ts` is the only frontend module that imports Tauri APIs.
@@ -131,6 +175,14 @@ The full local release gate is:
 ```bash
 npm run tauri:build
 ```
+
+GitHub Actions runs the frontend checks, Rust tests and lints, and a native
+Tauri bundle build on macOS, Windows, and Linux. A successful build on one
+operating system does not by itself validate the other two.
+
+Local bundles are suitable for controlled testing. Public downloads should wait
+for platform code signing and a release workflow so users can verify the
+publisher and avoid operating-system security warnings.
 
 ## Links
 
