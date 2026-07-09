@@ -4,7 +4,9 @@ use crate::launcher::{self, LauncherProfileResult, LauncherProfileValidation};
 use crate::manifest::schema::SetupManifest;
 use crate::minecraft::fabric_installer::{self, LoaderInstallResult};
 use crate::minecraft::local_install::{self, LocalInstallResult, LocalValidationResult};
-use crate::minecraft::managed_resources::ManagedResourceAction;
+use crate::minecraft::managed_resources::{
+    self, ManagedResourceAction, ManagedResourcesValidation,
+};
 use crate::minecraft::servers_dat::{self, ServerEntryResult, ServerEntryValidation};
 
 #[derive(Debug, Clone)]
@@ -19,6 +21,7 @@ pub struct ClientSetupResult {
 pub struct ClientSetupValidation {
     pub local_install: LocalValidationResult,
     pub server_entry: ServerEntryValidation,
+    pub managed_resources: ManagedResourcesValidation,
     pub launcher_profile: LauncherProfileValidation,
 }
 
@@ -47,7 +50,9 @@ pub fn validate_client(
     plan: &InstallPlan,
     manifest: &SetupManifest,
 ) -> Result<ClientSetupValidation, String> {
-    let local_install = local_install::validate_local_install(plan)?;
+    let local_install = local_install::validate_local_install(plan, manifest)?;
+    let managed_resources =
+        managed_resources::validate_plan_resources(plan, manifest, &local_install.game_dir)?;
     let server_entry = servers_dat::validate_server_entry(
         &local_install.game_dir,
         manifest.server_entry.as_ref(),
@@ -57,6 +62,7 @@ pub fn validate_client(
     Ok(ClientSetupValidation {
         local_install,
         server_entry,
+        managed_resources,
         launcher_profile,
     })
 }

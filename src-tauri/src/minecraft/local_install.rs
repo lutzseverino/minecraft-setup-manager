@@ -23,6 +23,7 @@ pub struct LocalValidationResult {
     pub game_dir_exists: bool,
     pub mods_dir_exists: bool,
     pub receipt_exists: bool,
+    pub receipt_matches: bool,
     pub game_dir: PathBuf,
     pub receipt_path: PathBuf,
 }
@@ -30,6 +31,8 @@ pub struct LocalValidationResult {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct SetupReceipt<'a> {
+    manifest_id: &'a str,
+    manifest_version: &'a str,
     server_id: &'a str,
     server_name: &'a str,
     server_address: &'a str,
@@ -83,6 +86,8 @@ pub fn prepare_local_install(
 
     let receipt_path = game_dir.join(RECEIPT_FILE_NAME);
     let receipt = SetupReceipt {
+        manifest_id: &manifest.id,
+        manifest_version: &manifest.manifest_version,
         server_id: &plan.server_id,
         server_name: &plan.server_name,
         server_address: &plan.server_address,
@@ -152,17 +157,54 @@ pub fn prepare_local_install(
     })
 }
 
-pub fn validate_local_install(plan: &InstallPlan) -> Result<LocalValidationResult, String> {
+pub fn validate_local_install(
+    plan: &InstallPlan,
+    manifest: &SetupManifest,
+) -> Result<LocalValidationResult, String> {
     let game_dir = game_directory_path(&plan.game_directory_name)?;
     let receipt_path = game_dir.join(RECEIPT_FILE_NAME);
+
+    let receipt_exists = receipt_path.is_file();
+    let receipt_matches = receipt_exists && receipt_matches(&receipt_path, plan, manifest)?;
 
     Ok(LocalValidationResult {
         game_dir_exists: game_dir.is_dir(),
         mods_dir_exists: game_dir.join("mods").is_dir(),
-        receipt_exists: receipt_path.is_file(),
+        receipt_exists,
+        receipt_matches,
         game_dir,
         receipt_path,
     })
+}
+
+fn receipt_matches(
+    path: &std::path::Path,
+    plan: &InstallPlan,
+    manifest: &SetupManifest,
+) -> Result<bool, String> {
+    let contents = fs::read(path).map_err(|error| {
+        format!(
+            "Could not read the setup receipt at {}: {error}",
+            path.display()
+        )
+    })?;
+    let receipt: serde_json::Value = serde_json::from_slice(&contents)
+        .map_err(|error| format!("Could not read the setup receipt format: {error}"))?;
+
+    Ok(receipt
+        .get("manifestId")
+        .and_then(serde_json::Value::as_str)
+        == Some(manifest.id.as_str())
+        && receipt
+            .get("manifestVersion")
+            .and_then(serde_json::Value::as_str)
+            == Some(manifest.manifest_version.as_str())
+        && receipt.get("serverId").and_then(serde_json::Value::as_str)
+            == Some(plan.server_id.as_str())
+        && receipt
+            .get("performanceProfile")
+            .and_then(serde_json::Value::as_str)
+            == Some(plan.profile.as_str()))
 }
 
 pub fn export_install_report() -> Result<crate::commands::DiagnosticBundle, String> {

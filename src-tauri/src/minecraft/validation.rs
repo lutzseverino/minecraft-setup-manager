@@ -8,6 +8,7 @@ pub fn validate_client_setup(
     let local_install = &validation.local_install;
     let launcher_profile = &validation.launcher_profile;
     let server_entry = &validation.server_entry;
+    let managed_resources = &validation.managed_resources;
     let mut checks = vec![
         ValidationCheck {
             id: "manifest".to_string(),
@@ -64,20 +65,38 @@ pub fn validate_client_setup(
             status: status_from_bool(local_install.mods_dir_exists),
         },
         ValidationCheck {
+            id: "managed_resources".to_string(),
+            label: "Setup files".to_string(),
+            detail: if managed_resources.issues.is_empty() {
+                format!(
+                    "All {} requested files match their expected hashes.",
+                    managed_resources.expected
+                )
+            } else {
+                managed_resources.issues.join(" ")
+            },
+            status: status_from_bool(
+                managed_resources.valid == managed_resources.expected
+                    && managed_resources.issues.is_empty(),
+            ),
+        },
+        ValidationCheck {
             id: "setup_receipt".to_string(),
             label: "Setup file".to_string(),
-            detail: if local_install.receipt_exists {
+            detail: if local_install.receipt_matches {
                 format!(
-                    "Setup file is saved at {}.",
+                    "Setup file matches this server at {}.",
                     local_install.receipt_path.display()
                 )
+            } else if local_install.receipt_exists {
+                "Setup file exists, but it does not match this server version.".to_string()
             } else {
                 format!(
                     "Setup file is missing at {}.",
                     local_install.receipt_path.display()
                 )
             },
-            status: status_from_bool(local_install.receipt_exists),
+            status: status_from_bool(local_install.receipt_matches),
         },
     ];
     if server_entry.required {

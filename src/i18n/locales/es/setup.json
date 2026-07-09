@@ -201,6 +201,10 @@
         "label": "Carpeta de mods",
         "detail": "La carpeta de mods esta lista."
       },
+      "managed_resources": {
+        "label": "Archivos de configuracion",
+        "detail": "Los archivos pedidos coinciden con sus versiones esperadas."
+      },
       "setup_receipt": {
         "label": "Archivo de configuracion",
         "detail": "El archivo de configuracion esta guardado."

@@ -7,7 +7,7 @@
    are supported; resolved Modrinth files remain.
 4. Add update and repair previews: add, replace, and remove managed files while
    leaving user files alone. Preview and direct-file execution are in place;
-   modified-file removal protection remains.
+   modified-file removal protection and post-apply hash validation are in place.
 5. Implement Fabric loader installation through a loader adapter. The app now
    installs validated launcher JSON from the pinned official Fabric Meta endpoint
    without executing an installer JAR.

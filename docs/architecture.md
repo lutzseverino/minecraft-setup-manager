@@ -63,5 +63,10 @@ resources and pinned Modrinth files, writes a setup receipt, creates or updates
 the optional `servers.dat` entry and official Minecraft Launcher profile,
 validates those local files and launcher settings, and exports a small report.
 
+Apply is idempotent and only advances durable installed state after a conformance
+pass verifies the loader version, launcher profile, setup receipt identity,
+optional server entry, and every selected resource hash. A failed post-check is
+reported as a failed setup and leaves the previous installed-state record intact.
+
 SKlauncher profile writes and manifest trust pinning remain backend-owned modules
 with adapter boundaries.

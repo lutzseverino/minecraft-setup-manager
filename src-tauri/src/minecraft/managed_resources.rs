@@ -38,6 +38,13 @@ pub struct ManagedResourceResult {
     pub hashes: Option<ManifestResourceHashes>,
 }
 
+#[derive(Debug, Clone)]
+pub struct ManagedResourcesValidation {
+    pub expected: usize,
+    pub valid: usize,
+    pub issues: Vec<String>,
+}
+
 #[derive(Debug)]
 struct ResolvedManagedResource {
     resource_id: String,
@@ -65,6 +72,39 @@ pub fn apply_plan_resource_actions(
     results.extend(remove_stale_resources(plan, game_dir, &protected_paths)?);
 
     Ok(results)
+}
+
+pub fn validate_plan_resources(
+    plan: &InstallPlan,
+    manifest: &SetupManifest,
+    game_dir: &Path,
+) -> Result<ManagedResourcesValidation, String> {
+    let resources = resolve_resources(plan, manifest)?;
+    validate_unique_destinations(&resources)?;
+    let mut valid = 0;
+    let mut issues = Vec::new();
+
+    for resource in &resources {
+        let path = managed_file_path(game_dir, resource.target, &resource.file_name)?;
+        if !path.is_file() {
+            issues.push(format!("{} is missing.", resource.file_name));
+            continue;
+        }
+        if !file_matches_hashes(&path, &resource.hashes)? {
+            issues.push(format!(
+                "{} does not match its expected hash.",
+                resource.file_name
+            ));
+            continue;
+        }
+        valid += 1;
+    }
+
+    Ok(ManagedResourcesValidation {
+        expected: resources.len(),
+        valid,
+        issues,
+    })
 }
 
 fn resolve_resources(

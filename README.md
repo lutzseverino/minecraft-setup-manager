@@ -34,6 +34,7 @@ Current implementation:
 - Downloads direct resources with size limits and SHA-256/SHA-512 verification.
 - Resolves pinned Modrinth versions and verifies project, compatibility, file, and hash metadata.
 - Adds or updates optional `servers.dat` entries while preserving unrelated NBT data.
+- Verifies loader, profile, receipt, server entry, and every managed file before recording success.
 - Removes stale managed resources when their recorded file is still safe to manage.
 - Validates the local setup slice.
 

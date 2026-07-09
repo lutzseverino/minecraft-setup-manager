@@ -32,7 +32,7 @@ pub fn resolve_server_manifest(
         &manifest,
         &manifest_fingerprint,
     )?;
-    let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
+    let update_status = update_status_for(&server, &manifest_fingerprint);
 
     Ok(ResolvedServerManifest {
         server,
@@ -53,6 +53,9 @@ pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, Str
     let (plan, manifest, manifest_fingerprint) = build_plan_context(&request)?;
     planner::ensure_plan_is_supported(&plan)?;
     let client_setup = setup::prepare_client(&plan, &manifest)?;
+    let validation = setup::validate_client(&plan, &manifest)?;
+    let validation_result = minecraft::validation::validate_client_setup(&plan, &validation);
+    ensure_validation_passed(&validation_result)?;
     let installed_resources =
         setup::installed_resources(&manifest, &request.profile, &client_setup.local_install)?;
     let log = minecraft::install_log(&plan, &client_setup);
@@ -90,7 +93,7 @@ fn build_plan_context(
 ) -> Result<(InstallPlan, manifest::schema::SetupManifest, String), String> {
     let server = crate::app_state::saved_server_entry(&request.server_id)?;
     let (manifest, manifest_fingerprint) = approved_manifest(&server, request)?;
-    let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
+    let update_status = update_status_for(&server, &manifest_fingerprint);
     let installed = crate::app_state::installed_server_snapshot(&request.server_id)?;
     let plan = manifest::build_install_plan(&manifest, request, update_status, installed.as_ref())?;
     Ok((plan, manifest, manifest_fingerprint))
@@ -124,19 +127,29 @@ fn ensure_manifest_was_approved(expected: &str, actual: &str) -> Result<(), Stri
     }
 }
 
-fn update_status_for(
-    server: &SavedServerEntry,
-    manifest: &manifest::schema::SetupManifest,
-    manifest_fingerprint: &str,
-) -> ServerUpdateStatus {
+fn ensure_validation_passed(result: &ValidationResult) -> Result<(), String> {
+    if result.overall != ValidationStatus::Fail {
+        return Ok(());
+    }
+
+    let failed = result
+        .checks
+        .iter()
+        .filter(|check| check.status == ValidationStatus::Fail)
+        .map(|check| check.label.as_str())
+        .collect::<Vec<_>>()
+        .join(", ");
+    Err(format!(
+        "Setup changed the local files, but these checks still failed: {failed}. Run setup again to repair them."
+    ))
+}
+
+fn update_status_for(server: &SavedServerEntry, manifest_fingerprint: &str) -> ServerUpdateStatus {
     match (
         &server.installed_manifest_version,
         &server.installed_manifest_fingerprint,
     ) {
         (Some(_), Some(fingerprint)) if fingerprint == manifest_fingerprint => {
-            ServerUpdateStatus::UpToDate
-        }
-        (Some(version), None) if version == &manifest.manifest_version => {
             ServerUpdateStatus::UpToDate
         }
         (Some(_), _) => ServerUpdateStatus::UpdateAvailable,
@@ -147,41 +160,32 @@ fn update_status_for(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::manifest::schema::{
-        ManifestInstall, ManifestLoader, ManifestLoaderKind, ManifestMinecraft, ManifestServer,
-        SetupManifest,
-    };
 
     #[test]
     fn update_status_uses_manifest_fingerprint_when_available() {
         let server = saved_server(Some("1"), Some("sha256:old"));
-        let manifest = manifest("1");
-
         assert_eq!(
             ServerUpdateStatus::UpdateAvailable,
-            update_status_for(&server, &manifest, "sha256:new")
+            update_status_for(&server, "sha256:new")
         );
     }
 
     #[test]
-    fn update_status_keeps_old_version_only_records_compatible() {
+    fn update_status_requires_legacy_records_to_be_verified_once() {
         let server = saved_server(Some("1"), None);
-        let manifest = manifest("1");
 
         assert_eq!(
-            ServerUpdateStatus::UpToDate,
-            update_status_for(&server, &manifest, "sha256:new")
+            ServerUpdateStatus::UpdateAvailable,
+            update_status_for(&server, "sha256:new")
         );
     }
 
     #[test]
     fn update_status_marks_missing_install_as_new_setup() {
         let server = saved_server(None, None);
-        let manifest = manifest("1");
-
         assert_eq!(
             ServerUpdateStatus::NewSetup,
-            update_status_for(&server, &manifest, "sha256:new")
+            update_status_for(&server, "sha256:new")
         );
     }
 
@@ -189,6 +193,21 @@ mod tests {
     fn apply_requires_the_exact_reviewed_manifest_fingerprint() {
         assert!(ensure_manifest_was_approved("sha256:same", "sha256:same").is_ok());
         assert!(ensure_manifest_was_approved("sha256:old", "sha256:new").is_err());
+    }
+
+    #[test]
+    fn failed_validation_cannot_be_recorded_as_complete() {
+        let result = ValidationResult {
+            overall: ValidationStatus::Fail,
+            checks: vec![ValidationCheck {
+                id: "files".to_string(),
+                label: "Setup files".to_string(),
+                detail: "Missing".to_string(),
+                status: ValidationStatus::Fail,
+            }],
+        };
+
+        assert!(ensure_validation_passed(&result).is_err());
     }
 
     fn saved_server(
@@ -209,33 +228,6 @@ mod tests {
             selected_profile: "balanced".to_string(),
             installed_manifest_version: installed_manifest_version.map(str::to_string),
             installed_manifest_fingerprint: installed_manifest_fingerprint.map(str::to_string),
-        }
-    }
-
-    fn manifest(version: &str) -> SetupManifest {
-        SetupManifest {
-            schema_version: 1,
-            manifest_version: version.to_string(),
-            id: "example".to_string(),
-            display_name: "Example".to_string(),
-            server: ManifestServer {
-                name: "Example".to_string(),
-                address: "play.example.com".to_string(),
-            },
-            minecraft: ManifestMinecraft {
-                version: "1.21.6".to_string(),
-                loader: ManifestLoader {
-                    kind: ManifestLoaderKind::None,
-                    version: None,
-                },
-            },
-            install: ManifestInstall {
-                game_directory_name: "Example".to_string(),
-                launcher_profile_name: "Example".to_string(),
-            },
-            profiles: vec![],
-            resources: vec![],
-            server_entry: None,
         }
     }
 }

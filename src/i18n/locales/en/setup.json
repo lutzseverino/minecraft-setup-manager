@@ -201,6 +201,10 @@
         "label": "Mods folder",
         "detail": "The mods folder is ready."
       },
+      "managed_resources": {
+        "label": "Setup files",
+        "detail": "The requested files match their expected versions."
+      },
       "setup_receipt": {
         "label": "Setup file",
         "detail": "The setup file is saved."
