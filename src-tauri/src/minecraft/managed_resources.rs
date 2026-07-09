@@ -12,6 +12,7 @@ use crate::manifest::schema::{
     ManifestResource, ManifestResourceHashes, ManifestResourceSource, ManifestResourceTarget,
     SetupManifest,
 };
+use crate::system::atomic_file;
 
 const MAX_RESOURCE_BYTES: u64 = 512 * 1024 * 1024;
 
@@ -127,7 +128,11 @@ fn sync_direct_resource(
         ));
     }
 
-    replace_file(&temp_path, &path, &resource.id)?;
+    atomic_file::replace_file(
+        &temp_path,
+        &path,
+        &format!("managed resource {}", resource.id),
+    )?;
 
     Ok(ManagedResourceResult {
         resource_id,
@@ -183,62 +188,6 @@ fn remove_stale_resources(
             })
         })
         .collect()
-}
-
-fn replace_file(temp_path: &Path, target_path: &Path, resource_id: &str) -> Result<(), String> {
-    let initial_error = match fs::rename(temp_path, target_path) {
-        Ok(()) => return Ok(()),
-        Err(error) => error,
-    };
-
-    if !target_path.exists() {
-        return Err(format!(
-            "Could not install managed resource {resource_id} at {}: {initial_error}",
-            target_path.display()
-        ));
-    }
-
-    let file_name = target_path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("resource");
-    let backup_path = target_path.with_file_name(format!(
-        ".minecraft-setup-manager-{file_name}-{}.backup",
-        std::process::id()
-    ));
-
-    if backup_path.exists() {
-        fs::remove_file(&backup_path).map_err(|error| {
-            format!("Could not clear an old backup for managed resource {resource_id}: {error}")
-        })?;
-    }
-
-    fs::rename(target_path, &backup_path).map_err(|error| {
-        format!(
-            "Could not prepare to replace managed resource {resource_id} at {}: {error}",
-            target_path.display()
-        )
-    })?;
-
-    if let Err(error) = fs::rename(temp_path, target_path) {
-        let restore_result = fs::rename(&backup_path, target_path);
-        return Err(match restore_result {
-            Ok(()) => format!(
-                "Could not install managed resource {resource_id}; the old file was restored: {error}"
-            ),
-            Err(restore_error) => format!(
-                "Could not install managed resource {resource_id}, and its backup at {} could not be restored: {error}; {restore_error}",
-                backup_path.display()
-            ),
-        });
-    }
-
-    fs::remove_file(&backup_path).map_err(|error| {
-        format!(
-            "Managed resource {resource_id} was installed, but its backup at {} could not be removed: {error}",
-            backup_path.display()
-        )
-    })
 }
 
 fn has_expected_hash(hashes: &ManifestResourceHashes) -> bool {

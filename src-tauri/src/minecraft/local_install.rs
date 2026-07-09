@@ -6,7 +6,7 @@ use serde::Serialize;
 use crate::commands::InstallPlan;
 use crate::manifest::schema::SetupManifest;
 use crate::minecraft::managed_resources::{self, ManagedResourceAction};
-use crate::system::{paths, APP_SUPPORT_NAME};
+use crate::system::{atomic_file, paths, APP_SUPPORT_NAME};
 
 const RECEIPT_FILE_NAME: &str = "minecraft-setup-manager.json";
 
@@ -94,12 +94,7 @@ pub fn prepare_local_install(
     };
     let receipt_json = serde_json::to_string_pretty(&receipt)
         .map_err(|error| format!("Could not prepare the setup receipt: {error}"))?;
-    fs::write(&receipt_path, receipt_json).map_err(|error| {
-        format!(
-            "Could not write the setup receipt at {}: {error}",
-            receipt_path.display()
-        )
-    })?;
+    atomic_file::write(&receipt_path, receipt_json.as_bytes(), "setup receipt")?;
 
     let mut log = vec![
         "Created the separate game folder.".to_string(),

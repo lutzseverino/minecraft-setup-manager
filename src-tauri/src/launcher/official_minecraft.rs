@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use serde_json::{Map, Value};
 use time::format_description::well_known::Rfc3339;
@@ -7,12 +8,14 @@ use time::OffsetDateTime;
 
 use crate::commands::{InstallPlan, LauncherDetection, LauncherDetectionStatus, LauncherKind};
 use crate::system::paths;
+use crate::system::{atomic_file, path_safety};
 
 use super::{
     LauncherAdapter, LauncherProfileAction, LauncherProfileResult, LauncherProfileValidation,
 };
 
 pub struct OfficialMinecraftLauncherAdapter;
+static PROFILE_WRITE_LOCK: Mutex<()> = Mutex::new(());
 
 impl LauncherAdapter for OfficialMinecraftLauncherAdapter {
     fn detection(&self) -> LauncherDetection {
@@ -61,6 +64,9 @@ impl OfficialMinecraftLauncherAdapter {
         plan: &InstallPlan,
         game_dir: &Path,
     ) -> Result<LauncherProfileResult, String> {
+        let _guard = PROFILE_WRITE_LOCK
+            .lock()
+            .map_err(|_| "The Minecraft Launcher profile lock is unavailable.".to_string())?;
         validate_profile_prerequisites(plan)?;
 
         let launcher_profiles_path = paths::minecraft_launcher_profiles_file()?;
@@ -223,10 +229,6 @@ fn read_launcher_profiles(path: &Path) -> Result<Value, String> {
 }
 
 fn profiles_object_mut(root: &mut Value) -> Result<&mut Map<String, Value>, String> {
-    if !root.is_object() {
-        *root = Value::Object(Map::new());
-    }
-
     let object = root
         .as_object_mut()
         .ok_or_else(|| "Minecraft Launcher profiles file is not a JSON object.".to_string())?;
@@ -234,16 +236,13 @@ fn profiles_object_mut(root: &mut Value) -> Result<&mut Map<String, Value>, Stri
         .entry("profiles")
         .or_insert_with(|| Value::Object(Map::new()));
 
-    if !profiles.is_object() {
-        *profiles = Value::Object(Map::new());
-    }
-
     profiles
         .as_object_mut()
         .ok_or_else(|| "Minecraft Launcher profiles entry is not a JSON object.".to_string())
 }
 
 fn backup_launcher_profiles(path: &Path) -> Result<PathBuf, String> {
+    path_safety::reject_symlink(path, "Minecraft Launcher profiles file")?;
     let backup_path = path.with_file_name(format!(
         "launcher_profiles.minecraft-setup-manager-{}.json.bak",
         backup_timestamp()
@@ -262,20 +261,11 @@ fn backup_launcher_profiles(path: &Path) -> Result<PathBuf, String> {
 fn write_launcher_profiles(path: &Path, root: &Value) -> Result<(), String> {
     let json = serde_json::to_string_pretty(root)
         .map_err(|error| format!("Could not prepare Minecraft Launcher profiles: {error}"))?;
-    let temp_path = path.with_extension("json.minecraft-setup-manager.tmp");
-
-    fs::write(&temp_path, format!("{json}\n")).map_err(|error| {
-        format!(
-            "Could not write temporary Minecraft Launcher profiles at {}: {error}",
-            temp_path.display()
-        )
-    })?;
-    fs::rename(&temp_path, path).map_err(|error| {
-        format!(
-            "Could not replace Minecraft Launcher profiles at {}: {error}",
-            path.display()
-        )
-    })
+    atomic_file::write(
+        path,
+        format!("{json}\n").as_bytes(),
+        "Minecraft Launcher profiles file",
+    )
 }
 
 fn profile_log_line(action: &LauncherProfileAction) -> String {
@@ -296,10 +286,7 @@ fn current_timestamp() -> String {
 }
 
 fn backup_timestamp() -> String {
-    current_timestamp()
-        .replace([':', '-'], "")
-        .replace('.', "")
-        .replace('Z', "")
+    current_timestamp().replace([':', '-', '.', 'Z'], "")
 }
 
 #[cfg(test)]
@@ -315,6 +302,17 @@ mod tests {
     use crate::commands::{InstallPlan, LauncherKind, ServerUpdateStatus};
 
     static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    #[test]
+    fn rejects_unfamiliar_launcher_profile_container_shapes() {
+        let mut non_object_root = json!([]);
+        let mut non_object_profiles = json!({ "profiles": [] });
+
+        assert!(profiles_object_mut(&mut non_object_root).is_err());
+        assert!(profiles_object_mut(&mut non_object_profiles).is_err());
+        assert_eq!(non_object_root, json!([]));
+        assert_eq!(non_object_profiles, json!({ "profiles": [] }));
+    }
 
     #[test]
     fn ensure_profile_preserves_unknown_fields_and_is_idempotent() {
