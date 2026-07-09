@@ -7,7 +7,8 @@ pub fn validate_client_setup(
 ) -> ValidationResult {
     let local_install = &validation.local_install;
     let launcher_profile = &validation.launcher_profile;
-    let checks = vec![
+    let server_entry = &validation.server_entry;
+    let mut checks = vec![
         ValidationCheck {
             id: "manifest".to_string(),
             label: "Setup list loaded".to_string(),
@@ -79,6 +80,20 @@ pub fn validate_client_setup(
             status: status_from_bool(local_install.receipt_exists),
         },
     ];
+    if server_entry.required {
+        checks.push(ValidationCheck {
+            id: "server_entry".to_string(),
+            label: "Saved server".to_string(),
+            detail: if server_entry.entry_matches {
+                format!("Server is saved in {}.", server_entry.path.display())
+            } else if server_entry.file_exists {
+                "The server list exists, but this server entry is missing or different.".to_string()
+            } else {
+                format!("Server list is missing at {}.", server_entry.path.display())
+            },
+            status: status_from_bool(server_entry.entry_matches),
+        });
+    }
     let overall = overall_status(&checks);
 
     ValidationResult { overall, checks }

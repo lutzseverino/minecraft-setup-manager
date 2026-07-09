@@ -76,7 +76,7 @@ pub fn build_action_previews(
             id: "server_entry".to_string(),
             kind: SetupActionKind::WriteServerEntry,
             intent: setup_intent,
-            status: SetupActionStatus::NotImplemented,
+            status: SetupActionStatus::Ready,
             required: false,
             resource_id: None,
             subject: Some(server_entry.name.clone()),

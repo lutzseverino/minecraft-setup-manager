@@ -60,8 +60,8 @@ The app currently resolves and stores server manifests, consumes manifest-define
 setup profiles, builds setup plans from saved manifests, creates the isolated
 game folder, installs pinned Fabric launcher metadata, syncs hash-pinned direct
 resources and pinned Modrinth files, writes a setup receipt, creates or updates
-the official Minecraft Launcher profile, validates those local files and launcher
-settings, and exports a small report.
+the optional `servers.dat` entry and official Minecraft Launcher profile,
+validates those local files and launcher settings, and exports a small report.
 
-SKlauncher profile writes, manifest trust pinning, and `servers.dat` writes remain
-backend-owned modules with adapter boundaries.
+SKlauncher profile writes and manifest trust pinning remain backend-owned modules
+with adapter boundaries.

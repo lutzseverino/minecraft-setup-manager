@@ -204,6 +204,10 @@
       "setup_receipt": {
         "label": "Archivo de configuracion",
         "detail": "El archivo de configuracion esta guardado."
+      },
+      "server_entry": {
+        "label": "Servidor guardado",
+        "detail": "El servidor esta en la lista de servidores de Minecraft."
       }
     }
   },

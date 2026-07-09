@@ -15,7 +15,8 @@
    version/project resolution and primary-file validation are in place.
 7. Download resources into managed folders with hash verification and temp-file
    renames. Direct and Modrinth files use the shared verified install path.
-8. Write server entries through a tested `servers.dat` module.
+8. Write server entries through a tested `servers.dat` module. NBT-preserving,
+   backed-up, atomic upserts and validation are in place.
 9. Add SKlauncher profile adapter behavior.
 10. Add manifest signing or trust pinning before accepting public remote configs.
 11. Define the future Minecraft server plugin around this manifest contract.

@@ -33,12 +33,12 @@ Current implementation:
 - Creates or updates the official Minecraft Launcher profile.
 - Downloads direct resources with size limits and SHA-256/SHA-512 verification.
 - Resolves pinned Modrinth versions and verifies project, compatibility, file, and hash metadata.
+- Adds or updates optional `servers.dat` entries while preserving unrelated NBT data.
 - Removes stale managed resources when their recorded file is still safe to manage.
 - Validates the local setup slice.
 
 Not implemented yet:
 
-- `servers.dat` writes.
 - Signed manifests.
 - Plugin-assisted server compatibility checks.
 

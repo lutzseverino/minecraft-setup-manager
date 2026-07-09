@@ -5,17 +5,20 @@ use crate::manifest::schema::SetupManifest;
 use crate::minecraft::fabric_installer::{self, LoaderInstallResult};
 use crate::minecraft::local_install::{self, LocalInstallResult, LocalValidationResult};
 use crate::minecraft::managed_resources::ManagedResourceAction;
+use crate::minecraft::servers_dat::{self, ServerEntryResult, ServerEntryValidation};
 
 #[derive(Debug, Clone)]
 pub struct ClientSetupResult {
     pub loader_install: LoaderInstallResult,
     pub local_install: LocalInstallResult,
+    pub server_entry: ServerEntryResult,
     pub launcher_profile: LauncherProfileResult,
 }
 
 #[derive(Debug, Clone)]
 pub struct ClientSetupValidation {
     pub local_install: LocalValidationResult,
+    pub server_entry: ServerEntryValidation,
     pub launcher_profile: LauncherProfileValidation,
 }
 
@@ -28,21 +31,32 @@ pub fn prepare_client(
     launcher::validate_profile_prerequisites(plan)?;
 
     let local_install = local_install::prepare_local_install(plan, manifest)?;
+    let server_entry =
+        servers_dat::ensure_server_entry(&local_install.game_dir, manifest.server_entry.as_ref())?;
     let launcher_profile = launcher::ensure_profile(plan, &local_install.game_dir)?;
 
     Ok(ClientSetupResult {
         loader_install,
         local_install,
+        server_entry,
         launcher_profile,
     })
 }
 
-pub fn validate_client(plan: &InstallPlan) -> Result<ClientSetupValidation, String> {
+pub fn validate_client(
+    plan: &InstallPlan,
+    manifest: &SetupManifest,
+) -> Result<ClientSetupValidation, String> {
     let local_install = local_install::validate_local_install(plan)?;
+    let server_entry = servers_dat::validate_server_entry(
+        &local_install.game_dir,
+        manifest.server_entry.as_ref(),
+    )?;
     let launcher_profile = launcher::validate_profile(plan, &local_install.game_dir)?;
 
     Ok(ClientSetupValidation {
         local_install,
+        server_entry,
         launcher_profile,
     })
 }

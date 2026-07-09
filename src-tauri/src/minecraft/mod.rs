@@ -10,6 +10,7 @@ use crate::commands::InstallPlan;
 use crate::launcher::LauncherProfileAction;
 use crate::manifest::schema::ManifestLoaderKind;
 use crate::minecraft::fabric_installer::LoaderInstallAction;
+use crate::minecraft::servers_dat::ServerEntryAction;
 use crate::setup::ClientSetupResult;
 
 pub fn install_log(plan: &InstallPlan, client_setup: &ClientSetupResult) -> Vec<String> {
@@ -51,6 +52,14 @@ pub fn install_log(plan: &InstallPlan, client_setup: &ClientSetupResult) -> Vec<
         client_setup.loader_install.profile_path.display()
     ));
     log.extend(client_setup.local_install.log.clone());
+    log.push(format!(
+        "[server] {} at {}",
+        server_entry_action_label(&client_setup.server_entry.action),
+        client_setup.server_entry.path.display()
+    ));
+    if let Some(path) = &client_setup.server_entry.backup_path {
+        log.push(format!("[server] Server list backup: {}", path.display()));
+    }
     log.extend(client_setup.launcher_profile.log.clone());
     if let Some(path) = &client_setup.launcher_profile.launcher_profiles_path {
         log.push(format!(
@@ -65,6 +74,15 @@ pub fn install_log(plan: &InstallPlan, client_setup: &ClientSetupResult) -> Vec<
         ));
     }
     log
+}
+
+fn server_entry_action_label(action: &ServerEntryAction) -> &'static str {
+    match action {
+        ServerEntryAction::NotRequested => "Server list entry not requested",
+        ServerEntryAction::Created => "Added server list entry",
+        ServerEntryAction::Updated => "Updated server list entry",
+        ServerEntryAction::Unchanged => "Server list entry already ready",
+    }
 }
 
 fn loader_action_label(action: &LoaderInstallAction) -> &'static str {

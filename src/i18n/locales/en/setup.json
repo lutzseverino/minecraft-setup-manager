@@ -204,6 +204,10 @@
       "setup_receipt": {
         "label": "Setup file",
         "detail": "The setup file is saved."
+      },
+      "server_entry": {
+        "label": "Saved server",
+        "detail": "The server is in Minecraft's server list."
       }
     }
   },

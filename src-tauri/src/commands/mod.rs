@@ -44,22 +44,13 @@ pub fn resolve_server_manifest(
 
 #[tauri::command]
 pub fn get_install_plan(request: InstallPlanRequest) -> Result<InstallPlan, String> {
-    let server = crate::app_state::saved_server_entry(&request.server_id)?;
-    let (manifest, manifest_fingerprint) = approved_manifest(&server, &request)?;
-    let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
-    let installed = crate::app_state::installed_server_snapshot(&request.server_id)?;
-
-    manifest::build_install_plan(&manifest, &request, update_status, installed.as_ref())
+    let (plan, _, _) = build_plan_context(&request)?;
+    Ok(plan)
 }
 
 #[tauri::command]
 pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, String> {
-    let server = crate::app_state::saved_server_entry(&request.server_id)?;
-    let (manifest, manifest_fingerprint) = approved_manifest(&server, &request)?;
-    let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
-    let installed = crate::app_state::installed_server_snapshot(&request.server_id)?;
-    let plan =
-        manifest::build_install_plan(&manifest, &request, update_status, installed.as_ref())?;
+    let (plan, manifest, manifest_fingerprint) = build_plan_context(&request)?;
     planner::ensure_plan_is_supported(&plan)?;
     let client_setup = setup::prepare_client(&plan, &manifest)?;
     let installed_resources =
@@ -85,13 +76,24 @@ pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, Str
 
 #[tauri::command]
 pub fn validate_installation(request: InstallPlanRequest) -> Result<ValidationResult, String> {
-    let plan = get_install_plan(request)?;
-    let validation = setup::validate_client(&plan)?;
+    let (plan, manifest, _) = build_plan_context(&request)?;
+    let validation = setup::validate_client(&plan, &manifest)?;
 
     Ok(minecraft::validation::validate_client_setup(
         &plan,
         &validation,
     ))
+}
+
+fn build_plan_context(
+    request: &InstallPlanRequest,
+) -> Result<(InstallPlan, manifest::schema::SetupManifest, String), String> {
+    let server = crate::app_state::saved_server_entry(&request.server_id)?;
+    let (manifest, manifest_fingerprint) = approved_manifest(&server, request)?;
+    let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
+    let installed = crate::app_state::installed_server_snapshot(&request.server_id)?;
+    let plan = manifest::build_install_plan(&manifest, request, update_status, installed.as_ref())?;
+    Ok((plan, manifest, manifest_fingerprint))
 }
 
 #[tauri::command]

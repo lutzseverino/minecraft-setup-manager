@@ -84,7 +84,11 @@ only for local development.
         "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
       }
     }
-  ]
+  ],
+  "serverEntry": {
+    "name": "Example Server",
+    "address": "play.example.com"
+  }
 }
 ```
 
@@ -127,3 +131,7 @@ Files no longer selected are removed only when their current hash still matches
 what the app installed. User-modified files are left in place. Changing a
 profile, resource version, source, filename, or hash produces an update preview
 before anything is applied.
+
+`serverEntry` is optional. When present, the app adds or updates that address in
+the isolated game folder's `servers.dat`, preserving other entries and unknown
+NBT fields.
