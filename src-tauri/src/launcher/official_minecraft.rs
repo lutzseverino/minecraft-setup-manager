@@ -348,9 +348,8 @@ mod tests {
     fn ensure_profile_preserves_unknown_fields_and_is_idempotent() {
         let _guard = ENV_LOCK.lock().expect("test env lock poisoned");
         let home = test_home("ensure-profile");
-        let previous_home = env::var_os("HOME");
-        set_home(&home);
-        let minecraft_dir = default_minecraft_dir_in(&home);
+        let _environment = TestEnvironment::new(&home);
+        let minecraft_dir = paths::default_minecraft_dir().expect("resolve Minecraft dir");
         let profiles_path = minecraft_dir.join("launcher_profiles.json");
         let version_id = "fabric-loader-0.16.14-1.21.6";
         let version_path = minecraft_dir
@@ -389,8 +388,7 @@ mod tests {
         .expect("write profiles");
 
         let plan = install_plan();
-        let game_dir =
-            home.join("Library/Application Support/Minecraft Setup Manager/Example Server");
+        let game_dir = home.join("game-dir");
         let adapter = OfficialMinecraftLauncherAdapter;
         let result = adapter
             .ensure_profile(&plan, &game_dir)
@@ -434,17 +432,14 @@ mod tests {
             LauncherProfileAction::Unchanged
         ));
         assert!(second_result.backup_path.is_none());
-
-        restore_home(previous_home);
     }
 
     #[test]
     fn ensure_profile_fails_before_write_when_fabric_version_is_missing() {
         let _guard = ENV_LOCK.lock().expect("test env lock poisoned");
         let home = test_home("missing-fabric");
-        let previous_home = env::var_os("HOME");
-        set_home(&home);
-        let minecraft_dir = default_minecraft_dir_in(&home);
+        let _environment = TestEnvironment::new(&home);
+        let minecraft_dir = paths::default_minecraft_dir().expect("resolve Minecraft dir");
         let profiles_path = minecraft_dir.join("launcher_profiles.json");
         std::fs::create_dir_all(&minecraft_dir).expect("create minecraft dir");
         std::fs::write(
@@ -470,8 +465,6 @@ mod tests {
             .expect("read minecraft dir")
             .filter_map(Result::ok)
             .all(|entry| !entry.file_name().to_string_lossy().contains(".bak")));
-
-        restore_home(previous_home);
     }
 
     fn install_plan() -> InstallPlan {
@@ -507,29 +500,48 @@ mod tests {
         path
     }
 
-    fn default_minecraft_dir_in(home: &Path) -> PathBuf {
-        home.join("Library")
-            .join("Application Support")
-            .join("minecraft")
-    }
-
     fn read_json(path: &Path) -> serde_json::Value {
         serde_json::from_str(&std::fs::read_to_string(path).expect("read json"))
             .expect("parse json")
     }
 
-    fn set_home(home: &Path) {
-        unsafe {
-            env::set_var("HOME", home);
+    struct TestEnvironment {
+        previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+    }
+
+    impl TestEnvironment {
+        fn new(home: &Path) -> Self {
+            let values = [
+                ("HOME", home.to_path_buf()),
+                ("USERPROFILE", home.to_path_buf()),
+                ("APPDATA", home.join("AppData").join("Roaming")),
+                ("XDG_DATA_HOME", home.join(".local").join("share")),
+            ];
+            let previous = values
+                .iter()
+                .map(|(name, _)| (*name, env::var_os(name)))
+                .collect();
+
+            for (name, value) in values {
+                unsafe {
+                    env::set_var(name, value);
+                }
+            }
+
+            Self { previous }
         }
     }
 
-    fn restore_home(previous_home: Option<std::ffi::OsString>) {
-        unsafe {
-            if let Some(value) = previous_home {
-                env::set_var("HOME", value);
-            } else {
-                env::remove_var("HOME");
+    impl Drop for TestEnvironment {
+        fn drop(&mut self) {
+            for (name, value) in &self.previous {
+                unsafe {
+                    if let Some(value) = value {
+                        env::set_var(name, value);
+                    } else {
+                        env::remove_var(name);
+                    }
+                }
             }
         }
     }
