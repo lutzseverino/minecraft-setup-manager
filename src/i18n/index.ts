@@ -12,7 +12,7 @@ export const languageNames = {
   es: "Español",
 } satisfies Record<Language, string>;
 
-const languageStorageKey = "maresme-mc-setup-language";
+const languageStorageKey = "minecraft-setup-manager-language";
 
 function isLanguage(value: string | null | undefined): value is Language {
   return languages.some((language) => language === value);

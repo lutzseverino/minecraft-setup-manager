@@ -16,5 +16,5 @@ pub fn run() {
             commands::validate_installation,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running Maresme MC setup app");
+        .expect("error while running Minecraft Setup Manager");
 }

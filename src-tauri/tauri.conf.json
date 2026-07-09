@@ -1,9 +1,9 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Maresme MC Setup",
-  "mainBinaryName": "Maresme MC Setup",
+  "productName": "Minecraft Setup Manager",
+  "mainBinaryName": "Minecraft Setup Manager",
   "version": "0.1.0",
-  "identifier": "cat.maresme.mcsetup",
+  "identifier": "dev.lutzseverino.minecraft-setup-manager",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
   "app": {
     "windows": [
       {
-        "title": "Maresme MC Setup",
+        "title": "Minecraft Setup Manager",
         "width": 1120,
         "height": 760,
         "minWidth": 900,
@@ -27,15 +27,8 @@
   },
   "bundle": {
     "active": true,
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
     "macOS": {
-      "bundleName": "Maresme MC Setup"
+      "bundleName": "Minecraft Setup Manager"
     },
     "targets": "all"
   }

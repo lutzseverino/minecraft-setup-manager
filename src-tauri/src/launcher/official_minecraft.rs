@@ -245,7 +245,7 @@ fn profiles_object_mut(root: &mut Value) -> Result<&mut Map<String, Value>, Stri
 
 fn backup_launcher_profiles(path: &Path) -> Result<PathBuf, String> {
     let backup_path = path.with_file_name(format!(
-        "launcher_profiles.maresme-mc-setup-{}.json.bak",
+        "launcher_profiles.minecraft-setup-manager-{}.json.bak",
         backup_timestamp()
     ));
 
@@ -262,7 +262,7 @@ fn backup_launcher_profiles(path: &Path) -> Result<PathBuf, String> {
 fn write_launcher_profiles(path: &Path, root: &Value) -> Result<(), String> {
     let json = serde_json::to_string_pretty(root)
         .map_err(|error| format!("Could not prepare Minecraft Launcher profiles: {error}"))?;
-    let temp_path = path.with_extension("json.maresme-mc-setup.tmp");
+    let temp_path = path.with_extension("json.minecraft-setup-manager.tmp");
 
     fs::write(&temp_path, format!("{json}\n")).map_err(|error| {
         format!(
@@ -361,7 +361,7 @@ mod tests {
         .expect("write profiles");
 
         let plan = install_plan();
-        let game_dir = home.join("Library/Application Support/Maresme MC Setup/Maresme MC");
+        let game_dir = home.join("Library/Application Support/Minecraft Setup Manager/Maresme MC");
         let adapter = OfficialMinecraftLauncherAdapter;
         let result = adapter
             .ensure_profile(&plan, &game_dir)
@@ -461,7 +461,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("system clock before epoch")
             .as_nanos();
-        let path = env::temp_dir().join(format!("maresme-mc-setup-{name}-{unique}"));
+        let path = env::temp_dir().join(format!("minecraft-setup-manager-{name}-{unique}"));
         std::fs::create_dir_all(&path).expect("create test home");
         path
     }

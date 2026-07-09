@@ -1,12 +1,12 @@
 [package]
-name = "maresme-mc-setup"
+name = "minecraft-setup-manager"
 version = "0.1.0"
-description = "Desktop setup wizard for Maresme MC clients"
-authors = ["Maresme MC"]
+description = "Desktop setup manager for Minecraft client setups"
+authors = ["Minecraft Setup Manager contributors"]
 edition = "2021"
 
 [lib]
-name = "maresme_mc_setup_lib"
+name = "minecraft_setup_manager_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

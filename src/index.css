@@ -5,10 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  Maresme MC Setup — "coastal voxel"
-  -----------------------------------
+  Minecraft Setup Manager — "voxel workstation"
+  ---------------------------------------------
   Minecraft inventory GUI (beveled stone panels, hotbar progress) crossed with
-  the Mediterranean Maresme coast (grass green, sea blue, sun-bleached stone).
+  a practical desktop setup tool (grass green, slate blue, sun-bleached stone).
   Bevels are built from a 3-stop edge system: a light highlight, a dark shade,
   and a near-black outline, mirroring how the game draws raised vs. sunken slots.
 */
@@ -50,7 +50,7 @@
 
   --success: oklch(0.56 0.13 148);
   --warning: oklch(0.7 0.12 76); /* ore gold */
-  --info: oklch(0.53 0.1 232); /* Maresme sea */
+  --info: oklch(0.53 0.1 232); /* setup blue */
 
   /* Bevel edge system + inventory slot fill */
   --bevel-light: oklch(0.97 0.006 95);
@@ -149,7 +149,7 @@
 
   body {
     @apply min-h-screen text-foreground;
-    /* Horizon over the Maresme sea, settling into stone */
+    /* Pale setup-screen horizon settling into stone */
     background:
       linear-gradient(
         180deg,

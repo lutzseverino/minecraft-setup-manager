@@ -6,8 +6,8 @@ use serde::Serialize;
 use crate::commands::InstallPlan;
 use crate::system::paths;
 
-const APP_SUPPORT_NAME: &str = "Maresme MC Setup";
-const RECEIPT_FILE_NAME: &str = "maresme-mc-setup.json";
+const APP_SUPPORT_NAME: &str = "Minecraft Setup Manager";
+const RECEIPT_FILE_NAME: &str = "minecraft-setup-manager.json";
 
 #[derive(Debug, Clone)]
 pub struct LocalInstallResult {
@@ -127,10 +127,10 @@ pub fn export_install_report() -> Result<crate::commands::DiagnosticBundle, Stri
         )
     })?;
 
-    let report_path = desktop.join("maresme-mc-setup-report.json");
+    let report_path = desktop.join("minecraft-setup-manager-report.json");
     let report = serde_json::json!({
         "app": APP_SUPPORT_NAME,
-        "message": "Maresme MC setup created the local folder structure and setup file."
+        "message": "Minecraft Setup Manager created the local folder structure and setup file."
     });
     fs::write(
         &report_path,
