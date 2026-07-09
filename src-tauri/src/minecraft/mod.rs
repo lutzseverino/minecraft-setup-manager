@@ -4,10 +4,12 @@ pub mod managed_resources;
 pub mod modrinth;
 pub mod servers_dat;
 pub mod validation;
+pub mod version;
 
 use crate::commands::InstallPlan;
 use crate::launcher::LauncherProfileAction;
 use crate::manifest::schema::ManifestLoaderKind;
+use crate::minecraft::fabric_installer::LoaderInstallAction;
 use crate::setup::ClientSetupResult;
 
 pub fn install_log(plan: &InstallPlan, client_setup: &ClientSetupResult) -> Vec<String> {
@@ -42,6 +44,12 @@ pub fn install_log(plan: &InstallPlan, client_setup: &ClientSetupResult) -> Vec<
         format!("[server] Saved server address: {}", plan.server_address),
     ];
 
+    log.push(format!(
+        "[loader] {} {} at {}",
+        loader_action_label(&client_setup.loader_install.action),
+        client_setup.loader_install.version_id,
+        client_setup.loader_install.profile_path.display()
+    ));
     log.extend(client_setup.local_install.log.clone());
     log.extend(client_setup.launcher_profile.log.clone());
     if let Some(path) = &client_setup.launcher_profile.launcher_profiles_path {
@@ -57,6 +65,14 @@ pub fn install_log(plan: &InstallPlan, client_setup: &ClientSetupResult) -> Vec<
         ));
     }
     log
+}
+
+fn loader_action_label(action: &LoaderInstallAction) -> &'static str {
+    match action {
+        LoaderInstallAction::NotNeeded => "Using regular Minecraft version",
+        LoaderInstallAction::Installed => "Installed Fabric version",
+        LoaderInstallAction::Unchanged => "Fabric version already ready",
+    }
 }
 
 fn loader_log_line(plan: &InstallPlan) -> String {

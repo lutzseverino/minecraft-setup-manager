@@ -29,6 +29,7 @@ Current implementation:
 - Uses server-defined setup profiles and explicit resource membership.
 - Builds setup plans from saved manifests.
 - Creates the managed game folder and setup receipt.
+- Installs manifest-pinned Fabric launcher profiles from the official Fabric Meta API.
 - Creates or updates the official Minecraft Launcher profile.
 - Downloads direct resources with size limits and SHA-256/SHA-512 verification.
 - Removes stale managed resources when their recorded file is still safe to manage.
@@ -36,7 +37,6 @@ Current implementation:
 
 Not implemented yet:
 
-- Fabric installation.
 - Modrinth resource resolution and downloads.
 - `servers.dat` writes.
 - Signed manifests.

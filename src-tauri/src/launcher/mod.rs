@@ -9,6 +9,7 @@ pub use official_minecraft::OfficialMinecraftLauncherAdapter;
 pub use sklauncher::SklauncherAdapter;
 
 use crate::commands::{InstallPlan, LauncherDetection, LauncherKind};
+use crate::minecraft::version;
 use crate::system::paths;
 
 pub trait LauncherAdapter {
@@ -68,6 +69,13 @@ pub fn validate_profile_prerequisites(plan: &InstallPlan) -> Result<(), String> 
     }
 }
 
+pub fn validate_base_prerequisites(plan: &InstallPlan) -> Result<(), String> {
+    match plan.launcher {
+        LauncherKind::Official => official_minecraft::validate_base_prerequisites(plan),
+        LauncherKind::Sklauncher | LauncherKind::Manual => Ok(()),
+    }
+}
+
 pub fn ensure_profile(
     plan: &InstallPlan,
     game_dir: &Path,
@@ -75,7 +83,7 @@ pub fn ensure_profile(
     match plan.launcher {
         LauncherKind::Official => OfficialMinecraftLauncherAdapter.ensure_profile(plan, game_dir),
         LauncherKind::Sklauncher | LauncherKind::Manual => {
-            let version_id = official_minecraft::version_id(plan);
+            let version_id = version::installed_version_id(plan);
 
             Ok(LauncherProfileResult {
                 profile_id: plan.server_id.clone(),
@@ -97,7 +105,7 @@ pub fn validate_profile(
     match plan.launcher {
         LauncherKind::Official => OfficialMinecraftLauncherAdapter.validate_profile(plan, game_dir),
         LauncherKind::Sklauncher | LauncherKind::Manual => {
-            let version_id = official_minecraft::version_id(plan);
+            let version_id = version::installed_version_id(plan);
             let version_exists = paths::minecraft_version_file(&version_id)
                 .map(|path| path.is_file())
                 .unwrap_or(false);

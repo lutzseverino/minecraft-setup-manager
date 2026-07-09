@@ -149,7 +149,7 @@ fn loader_actions(
                     id: "fabric_install".to_string(),
                     kind: SetupActionKind::InstallLoader,
                     intent: setup_intent,
-                    status: SetupActionStatus::NotImplemented,
+                    status: SetupActionStatus::Ready,
                     required: true,
                     resource_id: None,
                     subject: Some(manifest.minecraft.version.clone()),
