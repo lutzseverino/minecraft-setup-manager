@@ -49,6 +49,17 @@ pub fn list_saved_servers() -> Result<Vec<SavedServerEntry>, String> {
     Ok(state.servers.into_iter().map(Into::into).collect())
 }
 
+pub fn saved_server_manifest_url(server_id: &str) -> Result<String, String> {
+    let state = read_state()?;
+
+    state
+        .servers
+        .into_iter()
+        .find(|server| server.id == server_id)
+        .map(|server| server.manifest_url)
+        .ok_or_else(|| "Choose or add a server before starting setup.".to_string())
+}
+
 pub fn upsert_checked_server(
     address: &str,
     manifest_url: &str,

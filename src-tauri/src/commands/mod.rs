@@ -47,16 +47,17 @@ pub fn resolve_server_manifest(
 }
 
 #[tauri::command]
-pub fn get_install_plan(request: InstallPlanRequest) -> InstallPlan {
-    let manifest = manifest::load_manifest();
+pub fn get_install_plan(request: InstallPlanRequest) -> Result<InstallPlan, String> {
+    let manifest_url = crate::app_state::saved_server_manifest_url(&request.server_id)?;
+    let manifest = manifest::fetch::fetch_manifest(&manifest_url)?;
     let profile = performance_profiles::resolve_profile(&request.profile);
 
-    manifest::build_install_plan(&manifest, &request, profile)
+    Ok(manifest::build_install_plan(&manifest, &request, profile))
 }
 
 #[tauri::command]
 pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, String> {
-    let plan = get_install_plan(request);
+    let plan = get_install_plan(request)?;
     let client_setup = setup::prepare_client(&plan)?;
     let log = minecraft::install_log(&plan, &client_setup);
 
@@ -70,7 +71,7 @@ pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, Str
 
 #[tauri::command]
 pub fn validate_installation(request: InstallPlanRequest) -> Result<ValidationResult, String> {
-    let plan = get_install_plan(request);
+    let plan = get_install_plan(request)?;
     let validation = setup::validate_client(&plan)?;
 
     Ok(minecraft::validation::validate_client_setup(
