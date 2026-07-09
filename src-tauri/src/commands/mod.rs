@@ -45,7 +45,7 @@ pub fn resolve_server_manifest(
 #[tauri::command]
 pub fn get_install_plan(request: InstallPlanRequest) -> Result<InstallPlan, String> {
     let server = crate::app_state::saved_server_entry(&request.server_id)?;
-    let (manifest, manifest_fingerprint) = saved_manifest(&server)?;
+    let (manifest, manifest_fingerprint) = approved_manifest(&server, &request)?;
     let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
     let installed = crate::app_state::installed_server_snapshot(&request.server_id)?;
 
@@ -55,7 +55,7 @@ pub fn get_install_plan(request: InstallPlanRequest) -> Result<InstallPlan, Stri
 #[tauri::command]
 pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, String> {
     let server = crate::app_state::saved_server_entry(&request.server_id)?;
-    let (manifest, manifest_fingerprint) = saved_manifest(&server)?;
+    let (manifest, manifest_fingerprint) = approved_manifest(&server, &request)?;
     let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
     let installed = crate::app_state::installed_server_snapshot(&request.server_id)?;
     let plan =
@@ -96,14 +96,27 @@ pub fn export_diagnostics() -> Result<DiagnosticBundle, String> {
     minecraft::local_install::export_install_report()
 }
 
-fn saved_manifest(
+fn approved_manifest(
     server: &SavedServerEntry,
+    request: &InstallPlanRequest,
 ) -> Result<(manifest::schema::SetupManifest, String), String> {
-    let manifest_url = crate::app_state::saved_server_manifest_url(&server.id)?;
-    let manifest = manifest::fetch::fetch_manifest(&manifest_url)?;
+    let manifest = crate::app_state::saved_manifest_snapshot(&server.id)?;
     let manifest_fingerprint = manifest::fingerprint::manifest_fingerprint(&manifest)?;
 
+    ensure_manifest_was_approved(&request.manifest_fingerprint, &manifest_fingerprint)?;
+
     Ok((manifest, manifest_fingerprint))
+}
+
+fn ensure_manifest_was_approved(expected: &str, actual: &str) -> Result<(), String> {
+    if expected == actual {
+        Ok(())
+    } else {
+        Err(
+            "The server setup changed after you reviewed it. Check the server and review the steps again."
+                .to_string(),
+        )
+    }
 }
 
 fn update_status_for(
@@ -165,6 +178,12 @@ mod tests {
             ServerUpdateStatus::NewSetup,
             update_status_for(&server, &manifest, "sha256:new")
         );
+    }
+
+    #[test]
+    fn apply_requires_the_exact_reviewed_manifest_fingerprint() {
+        assert!(ensure_manifest_was_approved("sha256:same", "sha256:same").is_ok());
+        assert!(ensure_manifest_was_approved("sha256:old", "sha256:new").is_err());
     }
 
     fn saved_server(

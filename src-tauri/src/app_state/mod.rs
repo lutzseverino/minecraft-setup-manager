@@ -1,7 +1,9 @@
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
@@ -10,9 +12,11 @@ use crate::manifest::schema::{
     ManifestResourceHashes, ManifestResourceSource, ManifestResourceTarget, SetupManifest,
 };
 use crate::server::address::server_key;
-use crate::system::{paths, APP_SUPPORT_NAME};
+use crate::system::{atomic_file, paths, APP_SUPPORT_NAME};
 
 const STATE_FILE_NAME: &str = "state.json";
+const MANIFEST_CACHE_DIR: &str = "manifests";
+static STATE_LOCK: Mutex<()> = Mutex::new(());
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -31,6 +35,8 @@ struct SavedServerRecord {
     created_at: String,
     last_checked_at: String,
     last_installed_at: Option<String>,
+    #[serde(default)]
+    checked_manifest_fingerprint: Option<String>,
     selected_launcher: LauncherKind,
     selected_profile: String,
     game_dir: Option<PathBuf>,
@@ -74,12 +80,14 @@ pub struct InstalledResourceSnapshot {
 }
 
 pub fn list_saved_servers() -> Result<Vec<SavedServerEntry>, String> {
+    let _guard = lock_state()?;
     let state = read_state()?;
 
     Ok(state.servers.into_iter().map(Into::into).collect())
 }
 
 pub fn saved_server_entry(server_id: &str) -> Result<SavedServerEntry, String> {
+    let _guard = lock_state()?;
     let state = read_state()?;
 
     state
@@ -93,6 +101,7 @@ pub fn saved_server_entry(server_id: &str) -> Result<SavedServerEntry, String> {
 pub fn installed_server_snapshot(
     server_id: &str,
 ) -> Result<Option<InstalledServerSnapshot>, String> {
+    let _guard = lock_state()?;
     let state = read_state()?;
 
     Ok(state
@@ -102,15 +111,39 @@ pub fn installed_server_snapshot(
         .and_then(|server| server.installed.map(Into::into)))
 }
 
-pub fn saved_server_manifest_url(server_id: &str) -> Result<String, String> {
+pub fn saved_manifest_snapshot(server_id: &str) -> Result<SetupManifest, String> {
+    let _guard = lock_state()?;
     let state = read_state()?;
-
-    state
+    let record = state
         .servers
         .into_iter()
         .find(|server| server.id == server_id)
-        .map(|server| server.manifest_url)
-        .ok_or_else(|| "Choose or add a server before starting setup.".to_string())
+        .ok_or_else(|| "Choose or add a server before starting setup.".to_string())?;
+    let expected_fingerprint = record.checked_manifest_fingerprint.ok_or_else(|| {
+        "Check this server again before reviewing or applying its setup.".to_string()
+    })?;
+    let path = manifest_cache_path(&record.id)?;
+    let contents = fs::read(&path).map_err(|error| {
+        format!(
+            "Could not read the saved setup file at {}: {error}. Check the server again.",
+            path.display()
+        )
+    })?;
+    let manifest: SetupManifest = serde_json::from_slice(&contents)
+        .map_err(|error| format!("The saved setup file is damaged: {error}"))?;
+    crate::manifest::validation::validate_manifest(&manifest, &record.manifest_url)?;
+    let actual_fingerprint = crate::manifest::fingerprint::manifest_fingerprint(&manifest)?;
+
+    if actual_fingerprint != expected_fingerprint
+        || server_key(&record.address, &manifest.id) != record.id
+    {
+        return Err(
+            "The saved setup file no longer matches this server. Check the server again."
+                .to_string(),
+        );
+    }
+
+    Ok(manifest)
 }
 
 impl From<InstalledManifestRecord> for InstalledServerSnapshot {
@@ -142,6 +175,7 @@ pub fn record_installed_server(
     manifest: &SetupManifest,
     manifest_fingerprint: &str,
 ) -> Result<SavedServerEntry, String> {
+    let _guard = lock_state()?;
     let mut state = read_state()?;
     let now = timestamp();
     let record = state
@@ -161,7 +195,7 @@ pub fn record_installed_server(
         manifest_fingerprint: manifest_fingerprint.to_string(),
         resources: installed_resource_records(manifest, selected_profile),
     });
-    state.schema_version = 2;
+    state.schema_version = 3;
     let entry = record.clone().into();
     write_state(&state)?;
 
@@ -172,18 +206,21 @@ pub fn upsert_checked_server(
     address: &str,
     manifest_url: &str,
     manifest: &SetupManifest,
-    _fingerprint: &str,
+    fingerprint: &str,
 ) -> Result<SavedServerEntry, String> {
+    let _guard = lock_state()?;
     let mut state = read_state()?;
     let now = timestamp();
     let id = server_key(address, &manifest.id);
     let default_profile = default_profile_id(manifest)?.to_string();
+    write_manifest_cache(&id, manifest)?;
 
     if let Some(record) = state.servers.iter_mut().find(|server| server.id == id) {
         record.address = address.to_string();
         record.manifest_url = manifest_url.to_string();
         record.display_name = manifest.display_name.clone();
         record.last_checked_at = now;
+        record.checked_manifest_fingerprint = Some(fingerprint.to_string());
         if !manifest
             .profiles
             .iter()
@@ -204,6 +241,7 @@ pub fn upsert_checked_server(
         created_at: now.clone(),
         last_checked_at: now,
         last_installed_at: None,
+        checked_manifest_fingerprint: Some(fingerprint.to_string()),
         selected_launcher: LauncherKind::Official,
         selected_profile: default_profile,
         game_dir: None,
@@ -252,16 +290,37 @@ fn write_state(state: &AppState) -> Result<(), String> {
             parent.display()
         )
     })?;
-    fs::write(
-        &path,
-        serde_json::to_string_pretty(state)
-            .map_err(|error| format!("Could not prepare saved servers: {error}"))?,
-    )
-    .map_err(|error| format!("Could not save servers at {}: {error}", path.display()))
+    let contents = serde_json::to_vec_pretty(state)
+        .map_err(|error| format!("Could not prepare saved servers: {error}"))?;
+    atomic_file::write(&path, &contents, "saved server state")
 }
 
 fn state_path() -> Result<PathBuf, String> {
     Ok(paths::app_support_dir(APP_SUPPORT_NAME)?.join(STATE_FILE_NAME))
+}
+
+fn manifest_cache_path(server_id: &str) -> Result<PathBuf, String> {
+    let digest = Sha256::digest(server_id.as_bytes());
+    let file_name = digest
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    Ok(paths::app_support_dir(APP_SUPPORT_NAME)?
+        .join(MANIFEST_CACHE_DIR)
+        .join(format!("{file_name}.json")))
+}
+
+fn write_manifest_cache(server_id: &str, manifest: &SetupManifest) -> Result<(), String> {
+    let path = manifest_cache_path(server_id)?;
+    let contents = serde_json::to_vec_pretty(manifest)
+        .map_err(|error| format!("Could not prepare the saved setup file: {error}"))?;
+    atomic_file::write(&path, &contents, "saved setup file")
+}
+
+fn lock_state() -> Result<std::sync::MutexGuard<'static, ()>, String> {
+    STATE_LOCK
+        .lock()
+        .map_err(|_| "The saved server state lock is unavailable.".to_string())
 }
 
 fn timestamp() -> String {

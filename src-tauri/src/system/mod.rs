@@ -1,3 +1,4 @@
+pub mod atomic_file;
 pub mod path_safety;
 pub mod paths;
 

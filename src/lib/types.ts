@@ -37,6 +37,7 @@ export type ManifestPerformanceProfile = Readonly<{
 
 export type InstallPlanRequest = Readonly<{
   serverId: string;
+  manifestFingerprint: string;
   launcher: LauncherKind;
   profile: PerformanceProfileId;
   serverAddress: string;

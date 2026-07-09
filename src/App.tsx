@@ -65,6 +65,7 @@ export default function App() {
   const installRequest = useMemo(
     () => ({
       serverId: resolvedServer?.server.id ?? "",
+      manifestFingerprint: resolvedServer?.manifestFingerprint ?? "",
       launcher,
       profile,
       serverAddress:

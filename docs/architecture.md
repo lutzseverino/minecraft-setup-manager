@@ -28,6 +28,11 @@ planned, or applied. Validation owns schema support, IDs, limits, relationships,
 hash and URL policy, and portable path names. Filesystem owners repeat path and
 symlink checks before mutation as defense in depth.
 
+The validated manifest is cached as the current checked snapshot. Plan, apply,
+and validation requests carry the fingerprint shown by the UI and fail if it no
+longer matches that snapshot. App state and cached manifests use serialized,
+atomic writes so a crash cannot truncate the only durable copy.
+
 ## Dependency Direction
 
 React screens call typed functions from `src/lib/tauri.ts`. They do not import

@@ -25,6 +25,7 @@ Current implementation:
 - Discovers manifests from `https://<host>/.well-known/minecraft-setup-manager/manifest.json`.
 - Parses and fingerprints setup manifests.
 - Rejects unsupported, ambiguous, or unsafe manifest data before saving it.
+- Caches the reviewed manifest and binds plan/apply requests to its fingerprint.
 - Uses server-defined setup profiles and explicit resource membership.
 - Builds setup plans from saved manifests.
 - Creates the managed game folder and setup receipt.
@@ -85,6 +86,9 @@ https://play.example.com/.well-known/minecraft-setup-manager/manifest.json
 Direct manifest URLs are also accepted by the resolver.
 
 Server-specific manifests should live outside this generic app repository.
+Planning and installation use the validated snapshot that the player reviewed;
+they do not refetch the URL. If a later check finds different manifest bytes,
+the player must review the new steps before applying them.
 Profiles and their resource sets are also manifest data: each resource can list
 the profile IDs that should receive it. Resources without a profile list apply
 to every profile.

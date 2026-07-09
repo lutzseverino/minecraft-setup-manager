@@ -128,6 +128,7 @@ mod tests {
         let manifest = manifest_with_resources(vec![]);
         let request = InstallPlanRequest {
             server_id: "example".to_string(),
+            manifest_fingerprint: "sha256:example".to_string(),
             launcher: LauncherKind::Official,
             profile: "missing".to_string(),
             server_address: "play.example.com".to_string(),
@@ -144,6 +145,7 @@ mod tests {
         let manifest = manifest_with_resources(vec![]);
         let request = InstallPlanRequest {
             server_id: "example".to_string(),
+            manifest_fingerprint: "sha256:example".to_string(),
             launcher: LauncherKind::Official,
             profile: "light".to_string(),
             server_address: "play.example.com".to_string(),

@@ -42,6 +42,7 @@ pub enum ValidationStatus {
 #[serde(rename_all = "camelCase")]
 pub struct InstallPlanRequest {
     pub server_id: String,
+    pub manifest_fingerprint: String,
     pub launcher: LauncherKind,
     pub profile: String,
     pub server_address: String,

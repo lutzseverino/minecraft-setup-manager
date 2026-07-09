@@ -460,6 +460,7 @@ mod tests {
     fn request() -> InstallPlanRequest {
         InstallPlanRequest {
             server_id: "example".to_string(),
+            manifest_fingerprint: "sha256:example".to_string(),
             launcher: LauncherKind::Official,
             profile: "balanced".to_string(),
             server_address: "play.example.com".to_string(),
