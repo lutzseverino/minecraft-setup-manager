@@ -145,7 +145,8 @@ export async function getInstallPlan(request: InstallPlanRequest) {
       serverId: request.serverId || "example-server",
       updateStatus: "new_setup",
       minecraftVersion: demoManifest.minecraft.version,
-      fabricLoaderVersion: demoManifest.minecraft.loader.version ?? "",
+      loaderKind: demoManifest.minecraft.loader.kind,
+      loaderVersion: demoManifest.minecraft.loader.version ?? null,
       gameDirectoryName: demoManifest.install.gameDirectoryName,
       serverName: demoManifest.displayName,
       serverAddress: request.serverAddress || demoManifest.server.address,
@@ -159,7 +160,7 @@ export async function getInstallPlan(request: InstallPlanRequest) {
           ?.recommendedMemoryMb ?? demoManifest.profiles[0].recommendedMemoryMb,
       actions: [
         {
-          id: "fabric_version",
+          id: "loader_version",
           kind: "verify_loader",
           intent: "verify",
           status: "ready",
@@ -289,7 +290,7 @@ export async function validateInstallation(request: InstallPlanRequest) {
           status: "pass",
         },
         {
-          id: "fabric_version",
+          id: "loader_version",
           label: "Fabric version",
           detail: "Fabric version is installed.",
           status: "pass",

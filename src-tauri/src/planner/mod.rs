@@ -135,7 +135,7 @@ fn loader_actions(
 
             vec![
                 SetupActionPreview {
-                    id: "fabric_version".to_string(),
+                    id: "loader_version".to_string(),
                     kind: SetupActionKind::VerifyLoader,
                     intent: SetupActionIntent::Verify,
                     status: SetupActionStatus::Ready,
@@ -472,7 +472,8 @@ mod tests {
             server_id: "example".to_string(),
             update_status: ServerUpdateStatus::NewSetup,
             minecraft_version: "1.21.6".to_string(),
-            fabric_loader_version: "0.16.14".to_string(),
+            loader_kind: ManifestLoaderKind::Fabric,
+            loader_version: Some("0.16.14".to_string()),
             game_directory_name: "Example".to_string(),
             server_name: "Example".to_string(),
             server_address: "play.example.com".to_string(),

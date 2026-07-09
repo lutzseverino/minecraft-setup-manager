@@ -7,14 +7,12 @@ pub mod validation;
 
 use crate::commands::InstallPlan;
 use crate::launcher::LauncherProfileAction;
+use crate::manifest::schema::ManifestLoaderKind;
 use crate::setup::ClientSetupResult;
 
 pub fn install_log(plan: &InstallPlan, client_setup: &ClientSetupResult) -> Vec<String> {
     let mut log = vec![
-        format!(
-            "[manifest] Minecraft {} with Fabric {}",
-            plan.minecraft_version, plan.fabric_loader_version
-        ),
+        loader_log_line(plan),
         format!("[launcher] Selected adapter: {:?}", plan.launcher),
         format!(
             "[fabric] Verified launcher version: {}",
@@ -59,6 +57,19 @@ pub fn install_log(plan: &InstallPlan, client_setup: &ClientSetupResult) -> Vec<
         ));
     }
     log
+}
+
+fn loader_log_line(plan: &InstallPlan) -> String {
+    match plan.loader_kind {
+        ManifestLoaderKind::None => {
+            format!("[manifest] Vanilla Minecraft {}", plan.minecraft_version)
+        }
+        ManifestLoaderKind::Fabric => format!(
+            "[manifest] Minecraft {} with Fabric {}",
+            plan.minecraft_version,
+            plan.loader_version.as_deref().unwrap_or("unknown")
+        ),
+    }
 }
 
 fn profile_action_label(action: &LauncherProfileAction) -> &'static str {

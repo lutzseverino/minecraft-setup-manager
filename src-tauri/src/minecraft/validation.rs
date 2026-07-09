@@ -12,29 +12,29 @@ pub fn validate_client_setup(
             id: "manifest".to_string(),
             label: "Setup list loaded".to_string(),
             detail: format!(
-                "Minecraft {}, Fabric {}, {} required mods, and {} extra mods.",
+                "Minecraft {}, {}, {} required mods, and {} extra mods.",
                 plan.minecraft_version,
-                plan.fabric_loader_version,
+                loader_summary(plan),
                 plan.required_mods.len(),
                 plan.optional_mods.len()
             ),
             status: ValidationStatus::Pass,
         },
         ValidationCheck {
-            id: "fabric_version".to_string(),
-            label: "Fabric version".to_string(),
-            detail: if launcher_profile.fabric_version_exists {
+            id: "loader_version".to_string(),
+            label: "Minecraft version".to_string(),
+            detail: if launcher_profile.version_exists {
                 format!(
-                    "Fabric version {} is installed.",
+                    "Version {} is installed.",
                     launcher_profile.expected_version_id
                 )
             } else {
                 format!(
-                    "Fabric version {} is missing.",
+                    "Version {} is missing.",
                     launcher_profile.expected_version_id
                 )
             },
-            status: status_from_bool(launcher_profile.fabric_version_exists),
+            status: status_from_bool(launcher_profile.version_exists),
         },
         ValidationCheck {
             id: "game_directory".to_string(),
@@ -82,6 +82,16 @@ pub fn validate_client_setup(
     let overall = overall_status(&checks);
 
     ValidationResult { overall, checks }
+}
+
+fn loader_summary(plan: &InstallPlan) -> String {
+    match plan.loader_kind {
+        crate::manifest::schema::ManifestLoaderKind::None => "no extra loader".to_string(),
+        crate::manifest::schema::ManifestLoaderKind::Fabric => format!(
+            "Fabric {}",
+            plan.loader_version.as_deref().unwrap_or("unknown")
+        ),
+    }
 }
 
 fn launcher_profile_detail(profile: &crate::launcher::LauncherProfileValidation) -> String {

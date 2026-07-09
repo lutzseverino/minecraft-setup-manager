@@ -116,7 +116,8 @@ export type InstallPlan = Readonly<{
   serverId: string;
   updateStatus: ServerUpdateStatus;
   minecraftVersion: string;
-  fabricLoaderVersion: string;
+  loaderKind: ManifestLoaderKind;
+  loaderVersion: string | null;
   gameDirectoryName: string;
   serverName: string;
   serverAddress: string;

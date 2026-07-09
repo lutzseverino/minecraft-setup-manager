@@ -185,9 +185,9 @@
         "label": "Setup list loaded",
         "detail": "Minecraft, Fabric, server, and mod choices are ready."
       },
-      "fabric_version": {
-        "label": "Fabric version",
-        "detail": "Fabric version is installed."
+      "loader_version": {
+        "label": "Minecraft version",
+        "detail": "The Minecraft version and loader are installed."
       },
       "game_directory": {
         "label": "Separate game folder",

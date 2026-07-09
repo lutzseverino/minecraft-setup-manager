@@ -39,7 +39,7 @@ pub struct LauncherProfileValidation {
     pub required: bool,
     pub launcher_profiles_path: Option<PathBuf>,
     pub launcher_profiles_exists: bool,
-    pub fabric_version_exists: bool,
+    pub version_exists: bool,
     pub profile_exists: bool,
     pub game_dir_matches: bool,
     pub version_matches: bool,
@@ -75,7 +75,7 @@ pub fn ensure_profile(
     match plan.launcher {
         LauncherKind::Official => OfficialMinecraftLauncherAdapter.ensure_profile(plan, game_dir),
         LauncherKind::Sklauncher | LauncherKind::Manual => {
-            let version_id = official_minecraft::fabric_version_id(plan);
+            let version_id = official_minecraft::version_id(plan);
 
             Ok(LauncherProfileResult {
                 profile_id: plan.server_id.clone(),
@@ -97,8 +97,8 @@ pub fn validate_profile(
     match plan.launcher {
         LauncherKind::Official => OfficialMinecraftLauncherAdapter.validate_profile(plan, game_dir),
         LauncherKind::Sklauncher | LauncherKind::Manual => {
-            let version_id = official_minecraft::fabric_version_id(plan);
-            let fabric_version_exists = paths::minecraft_version_file(&version_id)
+            let version_id = official_minecraft::version_id(plan);
+            let version_exists = paths::minecraft_version_file(&version_id)
                 .map(|path| path.is_file())
                 .unwrap_or(false);
 
@@ -106,7 +106,7 @@ pub fn validate_profile(
                 required: false,
                 launcher_profiles_path: None,
                 launcher_profiles_exists: false,
-                fabric_version_exists,
+                version_exists,
                 profile_exists: false,
                 game_dir_matches: false,
                 version_matches: false,

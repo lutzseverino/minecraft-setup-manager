@@ -185,9 +185,9 @@
         "label": "Lista cargada",
         "detail": "Minecraft, Fabric, servidor y mods estan preparados."
       },
-      "fabric_version": {
-        "label": "Version de Fabric",
-        "detail": "La version de Fabric esta instalada."
+      "loader_version": {
+        "label": "Version de Minecraft",
+        "detail": "La version de Minecraft y el loader estan instalados."
       },
       "game_directory": {
         "label": "Carpeta separada",

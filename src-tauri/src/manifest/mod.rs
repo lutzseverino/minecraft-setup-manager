@@ -5,9 +5,7 @@ pub mod validation;
 
 use crate::app_state::InstalledServerSnapshot;
 use crate::commands::{InstallPlan, InstallPlanRequest, ServerUpdateStatus};
-use crate::manifest::schema::{
-    ManifestLoaderKind, ManifestResource, ManifestResourceTarget, SetupManifest,
-};
+use crate::manifest::schema::{ManifestResource, ManifestResourceTarget, SetupManifest};
 use crate::planner;
 
 pub fn build_install_plan(
@@ -26,21 +24,12 @@ pub fn build_install_plan(
     } else {
         request.server_address.trim().to_string()
     };
-    let loader_version = match manifest.minecraft.loader.kind {
-        ManifestLoaderKind::Fabric => manifest
-            .minecraft
-            .loader
-            .version
-            .clone()
-            .unwrap_or_default(),
-        ManifestLoaderKind::None => String::new(),
-    };
-
     Ok(InstallPlan {
         server_id: request.server_id.clone(),
         update_status,
         minecraft_version: manifest.minecraft.version.to_string(),
-        fabric_loader_version: loader_version,
+        loader_kind: manifest.minecraft.loader.kind,
+        loader_version: manifest.minecraft.loader.version.clone(),
         game_directory_name: manifest.install.game_directory_name.to_string(),
         server_name: manifest.display_name.to_string(),
         server_address,
@@ -103,8 +92,9 @@ mod tests {
     use super::*;
     use crate::commands::LauncherKind;
     use crate::manifest::schema::{
-        ManifestInstall, ManifestLoader, ManifestMinecraft, ManifestPerformanceProfile,
-        ManifestResourceHashes, ManifestResourceSource, ManifestResourceType, ManifestServer,
+        ManifestInstall, ManifestLoader, ManifestLoaderKind, ManifestMinecraft,
+        ManifestPerformanceProfile, ManifestResourceHashes, ManifestResourceSource,
+        ManifestResourceType, ManifestServer,
     };
 
     #[test]

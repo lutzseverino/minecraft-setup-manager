@@ -7,6 +7,7 @@ use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
 use crate::commands::{InstallPlan, LauncherDetection, LauncherDetectionStatus, LauncherKind};
+use crate::manifest::schema::ManifestLoaderKind;
 use crate::system::paths;
 use crate::system::{atomic_file, path_safety};
 
@@ -73,7 +74,7 @@ impl OfficialMinecraftLauncherAdapter {
         let mut root = read_launcher_profiles(&launcher_profiles_path)?;
         let profiles = profiles_object_mut(&mut root)?;
         let profile_id = profile_id(plan);
-        let version_id = fabric_version_id(plan);
+        let version_id = version_id(plan);
         let expected_game_dir = game_dir.display().to_string();
         let existing_profile = profiles.get(&profile_id).cloned();
         let mut next_profile = existing_profile
@@ -141,8 +142,8 @@ impl OfficialMinecraftLauncherAdapter {
         game_dir: &Path,
     ) -> Result<LauncherProfileValidation, String> {
         let launcher_profiles_path = paths::minecraft_launcher_profiles_file()?;
-        let version_id = fabric_version_id(plan);
-        let fabric_version_exists = paths::minecraft_version_file(&version_id)?.is_file();
+        let version_id = version_id(plan);
+        let version_exists = paths::minecraft_version_file(&version_id)?.is_file();
         let launcher_profiles_exists = launcher_profiles_path.is_file();
         let root = if launcher_profiles_exists {
             read_launcher_profiles(&launcher_profiles_path).ok()
@@ -169,7 +170,7 @@ impl OfficialMinecraftLauncherAdapter {
             required: true,
             launcher_profiles_path: Some(launcher_profiles_path),
             launcher_profiles_exists,
-            fabric_version_exists,
+            version_exists,
             profile_exists,
             game_dir_matches,
             version_matches,
@@ -189,23 +190,38 @@ pub fn validate_profile_prerequisites(plan: &InstallPlan) -> Result<(), String> 
         ));
     }
 
-    let version_id = fabric_version_id(plan);
+    let version_id = version_id(plan);
     let version_path = paths::minecraft_version_file(&version_id)?;
     if !version_path.is_file() {
         return Err(format!(
-            "Fabric {} for Minecraft {} is not installed yet. Install Fabric first, then run setup again.",
-            plan.fabric_loader_version, plan.minecraft_version
+            "{} is not installed yet. Open Minecraft Launcher, install or run that version once, then try again.",
+            version_label(plan)
         ));
     }
 
     Ok(())
 }
 
-pub fn fabric_version_id(plan: &InstallPlan) -> String {
-    format!(
-        "fabric-loader-{}-{}",
-        plan.fabric_loader_version, plan.minecraft_version
-    )
+pub fn version_id(plan: &InstallPlan) -> String {
+    match plan.loader_kind {
+        ManifestLoaderKind::None => plan.minecraft_version.clone(),
+        ManifestLoaderKind::Fabric => format!(
+            "fabric-loader-{}-{}",
+            plan.loader_version.as_deref().unwrap_or("unknown"),
+            plan.minecraft_version
+        ),
+    }
+}
+
+fn version_label(plan: &InstallPlan) -> String {
+    match plan.loader_kind {
+        ManifestLoaderKind::None => format!("Minecraft {}", plan.minecraft_version),
+        ManifestLoaderKind::Fabric => format!(
+            "Fabric {} for Minecraft {}",
+            plan.loader_version.as_deref().unwrap_or("unknown"),
+            plan.minecraft_version
+        ),
+    }
 }
 
 fn profile_id(plan: &InstallPlan) -> String {
@@ -312,6 +328,16 @@ mod tests {
         assert!(profiles_object_mut(&mut non_object_profiles).is_err());
         assert_eq!(non_object_root, json!([]));
         assert_eq!(non_object_profiles, json!({ "profiles": [] }));
+    }
+
+    #[test]
+    fn vanilla_profiles_use_the_minecraft_version_directly() {
+        let mut plan = install_plan();
+        plan.loader_kind = ManifestLoaderKind::None;
+        plan.loader_version = None;
+
+        assert_eq!(version_id(&plan), "1.21.6");
+        assert_eq!(version_label(&plan), "Minecraft 1.21.6");
     }
 
     #[test]
@@ -448,7 +474,8 @@ mod tests {
         InstallPlan {
             server_id: "example-server".to_string(),
             minecraft_version: "1.21.6".to_string(),
-            fabric_loader_version: "0.16.14".to_string(),
+            loader_kind: ManifestLoaderKind::Fabric,
+            loader_version: Some("0.16.14".to_string()),
             game_directory_name: "Example Server".to_string(),
             server_name: "Example Server".to_string(),
             server_address: "play.example.com".to_string(),
