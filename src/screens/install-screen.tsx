@@ -88,7 +88,7 @@ function actionTone(action: SetupActionPreview, hasRun: boolean) {
 }
 
 function actionMetaKey(action: SetupActionPreview) {
-  if (action.status === "not_implemented") {
+  if (action.status === "not_implemented" && action.intent === "verify") {
     return "install.actionStatus.notImplemented";
   }
 

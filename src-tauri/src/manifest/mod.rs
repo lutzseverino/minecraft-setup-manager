@@ -2,6 +2,7 @@ pub mod fetch;
 pub mod fingerprint;
 pub mod schema;
 
+use crate::app_state::InstalledServerSnapshot;
 use crate::commands::{InstallPlan, InstallPlanRequest, PerformanceProfileId, ServerUpdateStatus};
 use crate::manifest::schema::{
     ManifestLoaderKind, ManifestResource, ManifestResourceTarget, SetupManifest,
@@ -14,6 +15,7 @@ pub fn build_install_plan(
     request: &InstallPlanRequest,
     profile: PerformanceProfile,
     update_status: ServerUpdateStatus,
+    installed: Option<&InstalledServerSnapshot>,
 ) -> InstallPlan {
     let server_address = if request.server_address.trim().is_empty() {
         manifest.server.address.to_string()
@@ -40,7 +42,7 @@ pub fn build_install_plan(
         server_address,
         launcher: request.launcher,
         profile: request.profile,
-        actions: planner::build_action_previews(manifest, request, update_status),
+        actions: planner::build_action_previews(manifest, request, update_status, installed),
         required_mods: manifest
             .resources
             .iter()

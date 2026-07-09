@@ -85,7 +85,7 @@ pub enum ManifestResourceType {
     Config,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ManifestResourceTarget {
     Mods,
@@ -94,14 +94,14 @@ pub enum ManifestResourceTarget {
     Config,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum ManifestResourceSource {
     Modrinth { project: String, version: String },
     Direct { url: String },
 }
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestResourceHashes {
     pub sha512: Option<String>,

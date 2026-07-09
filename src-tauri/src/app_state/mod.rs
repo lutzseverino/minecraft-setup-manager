@@ -57,6 +57,19 @@ struct InstalledResourceRecord {
     hashes: ManifestResourceHashes,
 }
 
+#[derive(Debug, Clone)]
+pub struct InstalledServerSnapshot {
+    pub resources: Vec<InstalledResourceSnapshot>,
+}
+
+#[derive(Debug, Clone)]
+pub struct InstalledResourceSnapshot {
+    pub id: String,
+    pub target: ManifestResourceTarget,
+    pub source: ManifestResourceSource,
+    pub hashes: ManifestResourceHashes,
+}
+
 pub fn list_saved_servers() -> Result<Vec<SavedServerEntry>, String> {
     let state = read_state()?;
 
@@ -74,6 +87,18 @@ pub fn saved_server_entry(server_id: &str) -> Result<SavedServerEntry, String> {
         .ok_or_else(|| "Choose or add a server before starting setup.".to_string())
 }
 
+pub fn installed_server_snapshot(
+    server_id: &str,
+) -> Result<Option<InstalledServerSnapshot>, String> {
+    let state = read_state()?;
+
+    Ok(state
+        .servers
+        .into_iter()
+        .find(|server| server.id == server_id)
+        .and_then(|server| server.installed.map(Into::into)))
+}
+
 pub fn saved_server_manifest_url(server_id: &str) -> Result<String, String> {
     let state = read_state()?;
 
@@ -83,6 +108,25 @@ pub fn saved_server_manifest_url(server_id: &str) -> Result<String, String> {
         .find(|server| server.id == server_id)
         .map(|server| server.manifest_url)
         .ok_or_else(|| "Choose or add a server before starting setup.".to_string())
+}
+
+impl From<InstalledManifestRecord> for InstalledServerSnapshot {
+    fn from(record: InstalledManifestRecord) -> Self {
+        Self {
+            resources: record.resources.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<InstalledResourceRecord> for InstalledResourceSnapshot {
+    fn from(record: InstalledResourceRecord) -> Self {
+        Self {
+            id: record.id,
+            target: record.target,
+            source: record.source,
+            hashes: record.hashes,
+        }
+    }
 }
 
 pub fn record_installed_server(

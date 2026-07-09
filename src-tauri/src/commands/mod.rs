@@ -48,12 +48,14 @@ pub fn get_install_plan(request: InstallPlanRequest) -> Result<InstallPlan, Stri
     let (manifest, manifest_fingerprint) = saved_manifest(&server)?;
     let profile = performance_profiles::resolve_profile(&request.profile);
     let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
+    let installed = crate::app_state::installed_server_snapshot(&request.server_id)?;
 
     Ok(manifest::build_install_plan(
         &manifest,
         &request,
         profile,
         update_status,
+        installed.as_ref(),
     ))
 }
 
@@ -63,7 +65,14 @@ pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, Str
     let (manifest, manifest_fingerprint) = saved_manifest(&server)?;
     let profile = performance_profiles::resolve_profile(&request.profile);
     let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
-    let plan = manifest::build_install_plan(&manifest, &request, profile, update_status);
+    let installed = crate::app_state::installed_server_snapshot(&request.server_id)?;
+    let plan = manifest::build_install_plan(
+        &manifest,
+        &request,
+        profile,
+        update_status,
+        installed.as_ref(),
+    );
     let client_setup = setup::prepare_client(&plan)?;
     let log = minecraft::install_log(&plan, &client_setup);
     crate::app_state::record_installed_server(

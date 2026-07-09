@@ -1,14 +1,20 @@
+use std::collections::HashMap;
+
+use crate::app_state::{InstalledResourceSnapshot, InstalledServerSnapshot};
 use crate::commands::{
     InstallPlanRequest, LauncherKind, PerformanceProfileId, ServerUpdateStatus, SetupActionIntent,
     SetupActionKind, SetupActionPreview, SetupActionStatus, SetupActionTarget,
 };
-use crate::manifest::schema::{ManifestLoaderKind, ManifestResourceTarget, SetupManifest};
+use crate::manifest::schema::{
+    ManifestLoaderKind, ManifestResource, ManifestResourceTarget, SetupManifest,
+};
 use crate::manifest::selected_resources;
 
 pub fn build_action_previews(
     manifest: &SetupManifest,
     request: &InstallPlanRequest,
     update_status: ServerUpdateStatus,
+    installed: Option<&InstalledServerSnapshot>,
 ) -> Vec<SetupActionPreview> {
     let mut actions = Vec::new();
     let setup_intent = setup_intent(update_status);
@@ -35,7 +41,7 @@ pub fn build_action_previews(
         target: None,
     });
 
-    actions.extend(resource_actions(manifest, request.profile, setup_intent));
+    actions.extend(resource_actions(manifest, request.profile, installed));
 
     if let Some(server_entry) = &manifest.server_entry {
         actions.push(SetupActionPreview {
@@ -126,21 +132,58 @@ fn loader_actions(
 fn resource_actions(
     manifest: &SetupManifest,
     profile: PerformanceProfileId,
-    setup_intent: SetupActionIntent,
+    installed: Option<&InstalledServerSnapshot>,
 ) -> Vec<SetupActionPreview> {
+    let installed_resources = installed_resource_map(installed);
+
     selected_resources(manifest, profile)
         .into_iter()
-        .map(|resource| SetupActionPreview {
-            id: format!("resource_{}", resource.id),
-            kind: SetupActionKind::SyncResource,
-            intent: setup_intent,
-            status: SetupActionStatus::NotImplemented,
-            required: resource.required,
-            resource_id: Some(resource.id.clone()),
-            subject: Some(resource.name.clone()),
-            target: Some(setup_action_target(resource.target.clone())),
+        .map(|resource| {
+            let installed_resource = installed_resources.get(resource.id.as_str());
+
+            SetupActionPreview {
+                id: format!("resource_{}", resource.id),
+                kind: SetupActionKind::SyncResource,
+                intent: resource_intent(resource, installed_resource),
+                status: SetupActionStatus::NotImplemented,
+                required: resource.required,
+                resource_id: Some(resource.id.clone()),
+                subject: Some(resource.name.clone()),
+                target: Some(setup_action_target(resource.target.clone())),
+            }
         })
         .collect()
+}
+
+fn installed_resource_map(
+    installed: Option<&InstalledServerSnapshot>,
+) -> HashMap<&str, &InstalledResourceSnapshot> {
+    installed
+        .map(|snapshot| {
+            snapshot
+                .resources
+                .iter()
+                .map(|resource| (resource.id.as_str(), resource))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn resource_intent(
+    resource: &ManifestResource,
+    installed: Option<&&InstalledResourceSnapshot>,
+) -> SetupActionIntent {
+    match installed {
+        None => SetupActionIntent::Add,
+        Some(installed)
+            if installed.target == resource.target
+                && installed.source == resource.source
+                && installed.hashes == resource.hashes =>
+        {
+            SetupActionIntent::Verify
+        }
+        Some(_) => SetupActionIntent::Update,
+    }
 }
 
 fn setup_action_target(target: ManifestResourceTarget) -> SetupActionTarget {
@@ -164,5 +207,190 @@ fn setup_intent(update_status: ServerUpdateStatus) -> SetupActionIntent {
         ServerUpdateStatus::NewSetup => SetupActionIntent::Add,
         ServerUpdateStatus::UpdateAvailable => SetupActionIntent::Update,
         ServerUpdateStatus::UpToDate => SetupActionIntent::Verify,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_state::{InstalledResourceSnapshot, InstalledServerSnapshot};
+    use crate::manifest::schema::{
+        ManifestInstall, ManifestLoader, ManifestLoaderKind, ManifestMinecraft, ManifestResource,
+        ManifestResourceHashes, ManifestResourceSource, ManifestResourceTarget,
+        ManifestResourceType, ManifestServer,
+    };
+
+    #[test]
+    fn resource_actions_mark_matching_installed_resources_as_verify() {
+        let manifest = manifest_with_resource(resource(
+            "fabric-api",
+            ManifestResourceSource::Modrinth {
+                project: "fabric-api".to_string(),
+                version: "1.0.0".to_string(),
+            },
+            hashes("abc"),
+        ));
+        let installed = installed_snapshot(vec![installed_resource(
+            "fabric-api",
+            ManifestResourceSource::Modrinth {
+                project: "fabric-api".to_string(),
+                version: "1.0.0".to_string(),
+            },
+            hashes("abc"),
+        )]);
+
+        let actions = build_action_previews(
+            &manifest,
+            &request(),
+            ServerUpdateStatus::UpToDate,
+            Some(&installed),
+        );
+
+        assert_eq!(
+            Some(SetupActionIntent::Verify),
+            resource_action(&actions, "fabric-api").map(|action| action.intent)
+        );
+    }
+
+    #[test]
+    fn resource_actions_mark_changed_resources_as_update() {
+        let manifest = manifest_with_resource(resource(
+            "fabric-api",
+            ManifestResourceSource::Modrinth {
+                project: "fabric-api".to_string(),
+                version: "2.0.0".to_string(),
+            },
+            hashes("new"),
+        ));
+        let installed = installed_snapshot(vec![installed_resource(
+            "fabric-api",
+            ManifestResourceSource::Modrinth {
+                project: "fabric-api".to_string(),
+                version: "1.0.0".to_string(),
+            },
+            hashes("old"),
+        )]);
+
+        let actions = build_action_previews(
+            &manifest,
+            &request(),
+            ServerUpdateStatus::UpdateAvailable,
+            Some(&installed),
+        );
+
+        assert_eq!(
+            Some(SetupActionIntent::Update),
+            resource_action(&actions, "fabric-api").map(|action| action.intent)
+        );
+    }
+
+    #[test]
+    fn resource_actions_mark_new_resources_as_add() {
+        let manifest = manifest_with_resource(resource(
+            "fabric-api",
+            ManifestResourceSource::Modrinth {
+                project: "fabric-api".to_string(),
+                version: "1.0.0".to_string(),
+            },
+            hashes("abc"),
+        ));
+        let installed = installed_snapshot(vec![]);
+
+        let actions = build_action_previews(
+            &manifest,
+            &request(),
+            ServerUpdateStatus::UpdateAvailable,
+            Some(&installed),
+        );
+
+        assert_eq!(
+            Some(SetupActionIntent::Add),
+            resource_action(&actions, "fabric-api").map(|action| action.intent)
+        );
+    }
+
+    fn resource_action<'a>(
+        actions: &'a [SetupActionPreview],
+        resource_id: &str,
+    ) -> Option<&'a SetupActionPreview> {
+        actions
+            .iter()
+            .find(|action| action.resource_id.as_deref() == Some(resource_id))
+    }
+
+    fn request() -> InstallPlanRequest {
+        InstallPlanRequest {
+            server_id: "example".to_string(),
+            launcher: LauncherKind::Official,
+            profile: PerformanceProfileId::Balanced,
+            server_address: "play.example.com".to_string(),
+        }
+    }
+
+    fn manifest_with_resource(resource: ManifestResource) -> SetupManifest {
+        SetupManifest {
+            schema_version: 1,
+            manifest_version: "1".to_string(),
+            id: "example".to_string(),
+            display_name: "Example".to_string(),
+            server: ManifestServer {
+                name: "Example".to_string(),
+                address: "play.example.com".to_string(),
+            },
+            minecraft: ManifestMinecraft {
+                version: "1.21.6".to_string(),
+                loader: ManifestLoader {
+                    kind: ManifestLoaderKind::None,
+                    version: None,
+                },
+            },
+            install: ManifestInstall {
+                game_directory_name: "Example".to_string(),
+                launcher_profile_name: "Example".to_string(),
+            },
+            profiles: vec![],
+            resources: vec![resource],
+            server_entry: None,
+        }
+    }
+
+    fn resource(
+        id: &str,
+        source: ManifestResourceSource,
+        hashes: ManifestResourceHashes,
+    ) -> ManifestResource {
+        ManifestResource {
+            id: id.to_string(),
+            name: "Fabric API".to_string(),
+            resource_type: ManifestResourceType::Mod,
+            target: ManifestResourceTarget::Mods,
+            required: true,
+            source,
+            hashes,
+        }
+    }
+
+    fn installed_snapshot(resources: Vec<InstalledResourceSnapshot>) -> InstalledServerSnapshot {
+        InstalledServerSnapshot { resources }
+    }
+
+    fn installed_resource(
+        id: &str,
+        source: ManifestResourceSource,
+        hashes: ManifestResourceHashes,
+    ) -> InstalledResourceSnapshot {
+        InstalledResourceSnapshot {
+            id: id.to_string(),
+            target: ManifestResourceTarget::Mods,
+            source,
+            hashes,
+        }
+    }
+
+    fn hashes(sha256: &str) -> ManifestResourceHashes {
+        ManifestResourceHashes {
+            sha512: None,
+            sha256: Some(sha256.to_string()),
+        }
     }
 }
