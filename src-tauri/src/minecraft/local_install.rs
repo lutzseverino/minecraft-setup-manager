@@ -14,6 +14,7 @@ const RECEIPT_FILE_NAME: &str = "minecraft-setup-manager.json";
 pub struct LocalInstallResult {
     pub game_dir: PathBuf,
     pub receipt_path: PathBuf,
+    pub resource_results: Vec<managed_resources::ManagedResourceResult>,
     pub log: Vec<String>,
 }
 
@@ -103,51 +104,50 @@ pub fn prepare_local_install(
         "Created the mods, resource packs, shader packs, and config folders.".to_string(),
         "Saved a setup receipt in the game folder.".to_string(),
     ];
-    log.extend(
-        resource_results
-            .into_iter()
-            .map(|result| match result.action {
-                ManagedResourceAction::Downloaded => format!(
+    log.extend(resource_results.iter().map(|result| match result.action {
+        ManagedResourceAction::Downloaded => format!(
                     "Downloaded managed resource {} to {}.",
                     result.resource_id,
                     result
                         .path
+                        .as_ref()
                         .map(|path| path.display().to_string())
                         .unwrap_or_else(|| "unknown path".to_string())
                 ),
-                ManagedResourceAction::Verified => {
-                    format!("Managed resource {} was already ready.", result.resource_id)
-                }
-                ManagedResourceAction::Removed => format!(
+        ManagedResourceAction::Verified => {
+            format!("Managed resource {} was already ready.", result.resource_id)
+        }
+        ManagedResourceAction::Removed => format!(
                     "Removed managed resource {} at {}.",
                     result.resource_id,
                     result
                         .path
+                        .as_ref()
                         .map(|path| path.display().to_string())
                         .unwrap_or_else(|| "unknown path".to_string())
                 ),
-                ManagedResourceAction::Missing => format!(
-                    "Managed resource {} was already absent.",
-                    result.resource_id
-                ),
-                ManagedResourceAction::SkippedNoFileName => format!(
-                    "Skipped removing managed resource {} because no managed file name is known.",
-                    result.resource_id
-                ),
-                ManagedResourceAction::SkippedUnsupportedSource => format!(
-                    "Skipped managed resource {} because its source is not supported yet.",
-                    result.resource_id
-                ),
-                ManagedResourceAction::SkippedMissingHash => format!(
-                    "Skipped managed resource {} because it does not have a verification hash.",
-                    result.resource_id
-                ),
-            }),
-    );
+        ManagedResourceAction::Missing => format!(
+            "Managed resource {} was already absent.",
+            result.resource_id
+        ),
+        ManagedResourceAction::KeptCurrent => format!(
+            "Kept managed resource {} because its replacement uses the same file.",
+            result.resource_id
+        ),
+        ManagedResourceAction::SkippedModified => format!(
+            "Kept managed resource {} because it was changed outside this app.",
+            result.resource_id
+        ),
+        ManagedResourceAction::SkippedNoFileName => format!(
+            "Skipped removing managed resource {} because no managed file name is known.",
+            result.resource_id
+        ),
+    }));
 
     Ok(LocalInstallResult {
         game_dir,
         receipt_path,
+        resource_results,
         log,
     })
 }

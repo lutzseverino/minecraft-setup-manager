@@ -32,12 +32,12 @@ Current implementation:
 - Installs manifest-pinned Fabric launcher profiles from the official Fabric Meta API.
 - Creates or updates the official Minecraft Launcher profile.
 - Downloads direct resources with size limits and SHA-256/SHA-512 verification.
+- Resolves pinned Modrinth versions and verifies project, compatibility, file, and hash metadata.
 - Removes stale managed resources when their recorded file is still safe to manage.
 - Validates the local setup slice.
 
 Not implemented yet:
 
-- Modrinth resource resolution and downloads.
 - `servers.dat` writes.
 - Signed manifests.
 - Plugin-assisted server compatibility checks.
@@ -134,4 +134,5 @@ npm run tauri:build
 ## Links
 
 - [Architecture notes](docs/architecture.md)
+- [Setup manifest guide](docs/manifest.md)
 - [Implementation roadmap](docs/implementation-roadmap.md)

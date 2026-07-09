@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -12,6 +13,7 @@ use crate::manifest::schema::{
     ManifestResource, ManifestResourceHashes, ManifestResourceSource, ManifestResourceTarget,
     SetupManifest,
 };
+use crate::minecraft::modrinth;
 use crate::system::atomic_file;
 
 const MAX_RESOURCE_BYTES: u64 = 512 * 1024 * 1024;
@@ -22,9 +24,9 @@ pub enum ManagedResourceAction {
     Verified,
     Removed,
     Missing,
+    KeptCurrent,
+    SkippedModified,
     SkippedNoFileName,
-    SkippedUnsupportedSource,
-    SkippedMissingHash,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,6 +34,17 @@ pub struct ManagedResourceResult {
     pub resource_id: String,
     pub action: ManagedResourceAction,
     pub path: Option<PathBuf>,
+    pub file_name: Option<String>,
+    pub hashes: Option<ManifestResourceHashes>,
+}
+
+#[derive(Debug)]
+struct ResolvedManagedResource {
+    resource_id: String,
+    target: SetupActionTarget,
+    url: String,
+    file_name: String,
+    hashes: ManifestResourceHashes,
 }
 
 pub fn apply_plan_resource_actions(
@@ -39,17 +52,25 @@ pub fn apply_plan_resource_actions(
     manifest: &SetupManifest,
     game_dir: &Path,
 ) -> Result<Vec<ManagedResourceResult>, String> {
-    let mut results = sync_direct_resources(plan, manifest, game_dir)?;
-    results.extend(remove_stale_resources(plan, game_dir)?);
+    let resources = resolve_resources(plan, manifest)?;
+    validate_unique_destinations(&resources)?;
+    let mut results = resources
+        .iter()
+        .map(|resource| sync_resource(resource, game_dir))
+        .collect::<Result<Vec<_>, _>>()?;
+    let protected_paths = results
+        .iter()
+        .filter_map(|result| result.path.clone())
+        .collect::<HashSet<_>>();
+    results.extend(remove_stale_resources(plan, game_dir, &protected_paths)?);
 
     Ok(results)
 }
 
-fn sync_direct_resources(
+fn resolve_resources(
     plan: &InstallPlan,
     manifest: &SetupManifest,
-    game_dir: &Path,
-) -> Result<Vec<ManagedResourceResult>, String> {
+) -> Result<Vec<ResolvedManagedResource>, String> {
     manifest
         .resources
         .iter()
@@ -66,45 +87,64 @@ fn sync_direct_resources(
                     && action.resource_id.as_deref() == Some(resource.id.as_str())
             })
         })
-        .map(|resource| sync_direct_resource(resource, game_dir))
+        .map(|resource| resolve_resource(resource, plan))
         .collect()
 }
 
-fn sync_direct_resource(
+fn resolve_resource(
     resource: &ManifestResource,
+    plan: &InstallPlan,
+) -> Result<ResolvedManagedResource, String> {
+    let target = setup_action_target(resource.target.clone());
+    match &resource.source {
+        ManifestResourceSource::Direct { url } => Ok(ResolvedManagedResource {
+            resource_id: resource.id.clone(),
+            target,
+            url: url.clone(),
+            file_name: managed_file_name(resource)
+                .ok_or_else(|| format!("Direct resource {} has no safe file name.", resource.id))?,
+            hashes: resource.hashes.clone(),
+        }),
+        ManifestResourceSource::Modrinth { .. } => {
+            let resolved = modrinth::resolve_resource(resource, plan)?;
+            Ok(ResolvedManagedResource {
+                resource_id: resource.id.clone(),
+                target,
+                url: resolved.url,
+                file_name: resolved.file_name,
+                hashes: resolved.hashes,
+            })
+        }
+    }
+}
+
+fn validate_unique_destinations(resources: &[ResolvedManagedResource]) -> Result<(), String> {
+    let mut destinations = HashSet::new();
+    for resource in resources {
+        if !destinations.insert((resource.target, resource.file_name.as_str())) {
+            return Err(format!(
+                "More than one selected resource resolves to {}/{}.",
+                target_dir_name(resource.target),
+                resource.file_name
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn sync_resource(
+    resource: &ResolvedManagedResource,
     game_dir: &Path,
 ) -> Result<ManagedResourceResult, String> {
-    let resource_id = resource.id.clone();
-    let Some(file_name) = managed_file_name(resource) else {
-        return Ok(ManagedResourceResult {
-            resource_id,
-            action: ManagedResourceAction::SkippedNoFileName,
-            path: None,
-        });
-    };
-    let ManifestResourceSource::Direct { url } = &resource.source else {
-        return Ok(ManagedResourceResult {
-            resource_id,
-            action: ManagedResourceAction::SkippedUnsupportedSource,
-            path: None,
-        });
-    };
-    if !has_expected_hash(&resource.hashes) {
-        return Ok(ManagedResourceResult {
-            resource_id,
-            action: ManagedResourceAction::SkippedMissingHash,
-            path: None,
-        });
-    }
-
-    let target = setup_action_target(resource.target.clone());
-    let path = managed_file_path(game_dir, target, &file_name)?;
+    let path = managed_file_path(game_dir, resource.target, &resource.file_name)?;
 
     if path.is_file() && file_matches_hashes(&path, &resource.hashes)? {
         return Ok(ManagedResourceResult {
-            resource_id,
+            resource_id: resource.resource_id.clone(),
             action: ManagedResourceAction::Verified,
             path: Some(path),
+            file_name: Some(resource.file_name.clone()),
+            hashes: Some(resource.hashes.clone()),
         });
     }
 
@@ -117,33 +157,44 @@ fn sync_direct_resource(
             parent.display()
         )
     })?;
-    let temp_path = path.with_file_name(format!(".minecraft-setup-manager-{}.tmp", file_name));
-    http_client::download_to_path(url, &temp_path, MAX_RESOURCE_BYTES, "setup resource")?;
+    let temp_path = path.with_file_name(format!(
+        ".minecraft-setup-manager-{}.tmp",
+        resource.file_name
+    ));
+    http_client::download_to_path(
+        &resource.url,
+        &temp_path,
+        MAX_RESOURCE_BYTES,
+        "setup resource",
+    )?;
 
     if !file_matches_hashes(&temp_path, &resource.hashes)? {
         let _ = fs::remove_file(&temp_path);
         return Err(format!(
             "Downloaded resource {} did not match its expected hash.",
-            resource.id
+            resource.resource_id
         ));
     }
 
     atomic_file::replace_file(
         &temp_path,
         &path,
-        &format!("managed resource {}", resource.id),
+        &format!("managed resource {}", resource.resource_id),
     )?;
 
     Ok(ManagedResourceResult {
-        resource_id,
+        resource_id: resource.resource_id.clone(),
         action: ManagedResourceAction::Downloaded,
         path: Some(path),
+        file_name: Some(resource.file_name.clone()),
+        hashes: Some(resource.hashes.clone()),
     })
 }
 
 fn remove_stale_resources(
     plan: &InstallPlan,
     game_dir: &Path,
+    protected_paths: &HashSet<PathBuf>,
 ) -> Result<Vec<ManagedResourceResult>, String> {
     plan.actions
         .iter()
@@ -158,6 +209,8 @@ fn remove_stale_resources(
                     resource_id,
                     action: ManagedResourceAction::SkippedNoFileName,
                     path: None,
+                    file_name: None,
+                    hashes: None,
                 });
             };
             let target = action
@@ -170,6 +223,37 @@ fn remove_stale_resources(
                     resource_id,
                     action: ManagedResourceAction::Missing,
                     path: Some(path),
+                    file_name: Some(file_name.clone()),
+                    hashes: None,
+                });
+            }
+
+            if protected_paths.contains(&path) {
+                return Ok(ManagedResourceResult {
+                    resource_id,
+                    action: ManagedResourceAction::KeptCurrent,
+                    path: Some(path),
+                    file_name: Some(file_name.clone()),
+                    hashes: action.expected_hashes.clone(),
+                });
+            }
+
+            let Some(expected_hashes) = &action.expected_hashes else {
+                return Ok(ManagedResourceResult {
+                    resource_id,
+                    action: ManagedResourceAction::SkippedModified,
+                    path: Some(path),
+                    file_name: Some(file_name.clone()),
+                    hashes: None,
+                });
+            };
+            if !file_matches_hashes(&path, expected_hashes)? {
+                return Ok(ManagedResourceResult {
+                    resource_id,
+                    action: ManagedResourceAction::SkippedModified,
+                    path: Some(path),
+                    file_name: Some(file_name.clone()),
+                    hashes: Some(expected_hashes.clone()),
                 });
             }
 
@@ -185,6 +269,8 @@ fn remove_stale_resources(
                 resource_id,
                 action: ManagedResourceAction::Removed,
                 path: Some(path),
+                file_name: Some(file_name.clone()),
+                hashes: Some(expected_hashes.clone()),
             })
         })
         .collect()
@@ -195,15 +281,22 @@ fn has_expected_hash(hashes: &ManifestResourceHashes) -> bool {
 }
 
 fn file_matches_hashes(path: &Path, hashes: &ManifestResourceHashes) -> Result<bool, String> {
+    let mut checked = false;
     if let Some(expected) = &hashes.sha512 {
-        return Ok(file_digest::<Sha512>(path)? == expected.to_ascii_lowercase());
+        checked = true;
+        if file_digest::<Sha512>(path)? != expected.to_ascii_lowercase() {
+            return Ok(false);
+        }
     }
 
     if let Some(expected) = &hashes.sha256 {
-        return Ok(file_digest::<Sha256>(path)? == expected.to_ascii_lowercase());
+        checked = true;
+        if file_digest::<Sha256>(path)? != expected.to_ascii_lowercase() {
+            return Ok(false);
+        }
     }
 
-    Ok(false)
+    Ok(checked)
 }
 
 fn file_digest<D>(path: &Path) -> Result<String, String>
@@ -254,9 +347,12 @@ pub fn managed_file_name(resource: &ManifestResource) -> Option<String> {
 }
 
 pub fn can_sync_resource(resource: &ManifestResource) -> bool {
-    matches!(resource.source, ManifestResourceSource::Direct { .. })
-        && managed_file_name(resource).is_some()
-        && has_expected_hash(&resource.hashes)
+    match resource.source {
+        ManifestResourceSource::Direct { .. } => {
+            managed_file_name(resource).is_some() && has_expected_hash(&resource.hashes)
+        }
+        ManifestResourceSource::Modrinth { .. } => true,
+    }
 }
 
 fn direct_source_file_name(source: &ManifestResourceSource) -> Option<String> {
@@ -349,9 +445,30 @@ mod tests {
             vec![ManagedResourceResult {
                 resource_id: "old-mod".to_string(),
                 action: ManagedResourceAction::Removed,
-                path: Some(file_path)
+                path: Some(file_path),
+                file_name: Some("old.jar".to_string()),
+                hashes: Some(hashes_for_bytes(b"old")),
             }]
         );
+    }
+
+    #[test]
+    fn keeps_a_stale_resource_that_the_user_modified() {
+        let game_dir = test_dir("keep-modified-resource");
+        let mods_dir = game_dir.join("mods");
+        fs::create_dir_all(&mods_dir).expect("create mods dir");
+        let file_path = mods_dir.join("old.jar");
+        fs::write(&file_path, "user replacement").expect("write changed file");
+
+        let results = apply_plan_resource_actions(
+            &plan_with_removal(Some("old.jar")),
+            &empty_manifest(),
+            &game_dir,
+        )
+        .expect("apply resource actions");
+
+        assert!(file_path.exists());
+        assert_eq!(results[0].action, ManagedResourceAction::SkippedModified);
     }
 
     #[test]
@@ -395,7 +512,9 @@ mod tests {
             vec![ManagedResourceResult {
                 resource_id: "old-mod".to_string(),
                 action: ManagedResourceAction::SkippedNoFileName,
-                path: None
+                path: None,
+                file_name: None,
+                hashes: None,
             }]
         );
     }
@@ -430,7 +549,15 @@ mod tests {
             vec![ManagedResourceResult {
                 resource_id: "direct-mod".to_string(),
                 action: ManagedResourceAction::Verified,
-                path: Some(file_path)
+                path: Some(file_path),
+                file_name: Some("direct.jar".to_string()),
+                hashes: Some(ManifestResourceHashes {
+                    sha512: None,
+                    sha256: Some(
+                        "2c735545895a65a94dd6f3b3fc3624280771fa64a263d6ed182a602ee7c04d6c"
+                            .to_string(),
+                    ),
+                }),
             }]
         );
     }
@@ -461,6 +588,8 @@ mod tests {
                 resource_id: "direct-mod".to_string(),
                 action: ManagedResourceAction::Downloaded,
                 path: Some(installed_path),
+                file_name: Some("direct.jar".to_string()),
+                hashes: Some(hashes(&hash)),
             }]
         );
     }
@@ -501,6 +630,7 @@ mod tests {
             subject: Some("Old Mod".to_string()),
             target: Some(SetupActionTarget::Mods),
             file_name: file_name.map(str::to_string),
+            expected_hashes: Some(hashes_for_bytes(b"old")),
         }])
     }
 
@@ -515,6 +645,7 @@ mod tests {
             subject: Some(resource_id.to_string()),
             target: Some(SetupActionTarget::Mods),
             file_name: Some(file_name.to_string()),
+            expected_hashes: None,
         }])
     }
 
@@ -609,6 +740,10 @@ mod tests {
             sha512: None,
             sha256: Some(sha256.to_string()),
         }
+    }
+
+    fn hashes_for_bytes(bytes: &[u8]) -> ManifestResourceHashes {
+        hashes(&hex_digest(&Sha256::digest(bytes)))
     }
 
     fn serve_once(body: &'static [u8]) -> String {

@@ -54,6 +54,7 @@ pub fn build_action_previews(
         subject: Some(manifest.install.game_directory_name.clone()),
         target: None,
         file_name: None,
+        expected_hashes: None,
     });
     actions.push(SetupActionPreview {
         id: "launcher_profile".to_string(),
@@ -65,6 +66,7 @@ pub fn build_action_previews(
         subject: Some(manifest.install.launcher_profile_name.clone()),
         target: None,
         file_name: None,
+        expected_hashes: None,
     });
 
     actions.extend(resource_actions(manifest, &request.profile, installed));
@@ -80,6 +82,7 @@ pub fn build_action_previews(
             subject: Some(server_entry.name.clone()),
             target: None,
             file_name: None,
+            expected_hashes: None,
         });
     }
 
@@ -93,6 +96,7 @@ pub fn build_action_previews(
         subject: None,
         target: None,
         file_name: None,
+        expected_hashes: None,
     });
     actions.push(SetupActionPreview {
         id: "validation".to_string(),
@@ -104,6 +108,7 @@ pub fn build_action_previews(
         subject: None,
         target: None,
         file_name: None,
+        expected_hashes: None,
     });
 
     actions
@@ -124,6 +129,7 @@ fn loader_actions(
             subject: Some(manifest.minecraft.version.clone()),
             target: None,
             file_name: None,
+            expected_hashes: None,
         }],
         ManifestLoaderKind::Fabric => {
             let version = manifest
@@ -144,6 +150,7 @@ fn loader_actions(
                     subject: Some(version),
                     target: None,
                     file_name: None,
+                    expected_hashes: None,
                 },
                 SetupActionPreview {
                     id: "fabric_install".to_string(),
@@ -155,6 +162,7 @@ fn loader_actions(
                     subject: Some(manifest.minecraft.version.clone()),
                     target: None,
                     file_name: None,
+                    expected_hashes: None,
                 },
             ]
         }
@@ -167,13 +175,14 @@ fn resource_actions(
     installed: Option<&InstalledServerSnapshot>,
 ) -> Vec<SetupActionPreview> {
     let installed_resources = installed_resource_map(installed);
-    let selected_resources = selected_resources(manifest, profile);
-    let selected_resource_ids = selected_resources
+    let selected = selected_resources(manifest, profile);
+    let selected_resource_ids = selected
         .iter()
         .map(|resource| resource.id.as_str())
         .collect::<HashSet<_>>();
-    let mut actions = selected_resources
-        .into_iter()
+    let mut actions = selected
+        .iter()
+        .copied()
         .map(|resource| {
             let installed_resource = installed_resources.get(resource.id.as_str());
 
@@ -191,9 +200,34 @@ fn resource_actions(
                 subject: Some(resource.name.clone()),
                 target: Some(setup_action_target(resource.target.clone())),
                 file_name: managed_file_name(resource),
+                expected_hashes: None,
             }
         })
         .collect::<Vec<_>>();
+
+    actions.extend(selected.into_iter().filter_map(|resource| {
+        let installed_resource = installed_resources.get(resource.id.as_str())?;
+        if !matches!(
+            resource_intent(resource, Some(installed_resource)),
+            SetupActionIntent::Update
+        ) {
+            return None;
+        }
+        let file_name = installed_resource.file_name.clone()?;
+
+        Some(SetupActionPreview {
+            id: format!("remove_replaced_resource_{}", resource.id),
+            kind: SetupActionKind::RemoveResource,
+            intent: SetupActionIntent::Remove,
+            status: SetupActionStatus::Ready,
+            required: false,
+            resource_id: Some(resource.id.clone()),
+            subject: Some(resource.name.clone()),
+            target: Some(setup_action_target(installed_resource.target.clone())),
+            file_name: Some(file_name),
+            expected_hashes: Some(installed_resource.hashes.clone()),
+        })
+    }));
 
     if let Some(installed) = installed {
         actions.extend(
@@ -218,6 +252,7 @@ fn resource_actions(
                         subject: Some(resource.name.clone()),
                         target: Some(setup_action_target(resource.target.clone())),
                         file_name,
+                        expected_hashes: Some(resource.hashes.clone()),
                     }
                 }),
         );
@@ -246,15 +281,45 @@ fn resource_intent(
 ) -> SetupActionIntent {
     match installed {
         None => SetupActionIntent::Add,
-        Some(installed)
-            if installed.target == resource.target
-                && installed.source == resource.source
-                && installed.hashes == resource.hashes =>
-        {
+        Some(installed) if resource_matches_installed(resource, installed) => {
             SetupActionIntent::Verify
         }
         Some(_) => SetupActionIntent::Update,
     }
+}
+
+fn resource_matches_installed(
+    resource: &ManifestResource,
+    installed: &InstalledResourceSnapshot,
+) -> bool {
+    if installed.target != resource.target || installed.source != resource.source {
+        return false;
+    }
+    if resource
+        .file_name
+        .as_ref()
+        .is_some_and(|file_name| installed.file_name.as_ref() != Some(file_name))
+    {
+        return false;
+    }
+    if resource
+        .hashes
+        .sha512
+        .as_ref()
+        .is_some_and(|hash| installed.hashes.sha512.as_ref() != Some(hash))
+    {
+        return false;
+    }
+    if resource
+        .hashes
+        .sha256
+        .as_ref()
+        .is_some_and(|hash| installed.hashes.sha256.as_ref() != Some(hash))
+    {
+        return false;
+    }
+
+    true
 }
 
 fn launcher_action_status(launcher: LauncherKind) -> SetupActionStatus {
@@ -295,6 +360,7 @@ mod tests {
             subject: Some("Fabric".to_string()),
             target: None,
             file_name: None,
+            expected_hashes: None,
         }];
 
         let error = ensure_plan_is_supported(&plan).expect_err("unsupported plan must fail");
@@ -315,6 +381,7 @@ mod tests {
             subject: Some("Example".to_string()),
             target: None,
             file_name: None,
+            expected_hashes: None,
         }];
 
         assert!(ensure_plan_is_supported(&plan).is_ok());
@@ -380,6 +447,46 @@ mod tests {
 
         assert_eq!(
             Some(SetupActionIntent::Update),
+            resource_action(&actions, "fabric-api").map(|action| action.intent)
+        );
+        assert!(actions.iter().any(|action| {
+            action.kind == SetupActionKind::RemoveResource
+                && action.resource_id.as_deref() == Some("fabric-api")
+                && action.expected_hashes == Some(hashes("old"))
+        }));
+    }
+
+    #[test]
+    fn modrinth_api_hashes_do_not_create_permanent_updates() {
+        let manifest = manifest_with_resource(resource(
+            "fabric-api",
+            ManifestResourceSource::Modrinth {
+                project: "project-id".to_string(),
+                version: "version-id".to_string(),
+            },
+            ManifestResourceHashes::default(),
+        ));
+        let installed = installed_snapshot(vec![installed_resource(
+            "fabric-api",
+            ManifestResourceSource::Modrinth {
+                project: "project-id".to_string(),
+                version: "version-id".to_string(),
+            },
+            ManifestResourceHashes {
+                sha512: Some("resolved".to_string()),
+                sha256: None,
+            },
+        )]);
+
+        let actions = build_action_previews(
+            &manifest,
+            &request(),
+            ServerUpdateStatus::UpToDate,
+            Some(&installed),
+        );
+
+        assert_eq!(
+            Some(SetupActionIntent::Verify),
             resource_action(&actions, "fabric-api").map(|action| action.intent)
         );
     }

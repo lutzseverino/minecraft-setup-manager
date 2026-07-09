@@ -174,6 +174,7 @@ pub fn record_installed_server(
     game_dir: PathBuf,
     manifest: &SetupManifest,
     manifest_fingerprint: &str,
+    resources: Vec<InstalledResourceSnapshot>,
 ) -> Result<SavedServerEntry, String> {
     let _guard = lock_state()?;
     let mut state = read_state()?;
@@ -193,7 +194,7 @@ pub fn record_installed_server(
         manifest_id: manifest.id.clone(),
         manifest_version: manifest.manifest_version.clone(),
         manifest_fingerprint: manifest_fingerprint.to_string(),
-        resources: installed_resource_records(manifest, selected_profile),
+        resources: resources.into_iter().map(Into::into).collect(),
     });
     state.schema_version = 3;
     let entry = record.clone().into();
@@ -329,23 +330,6 @@ fn timestamp() -> String {
         .unwrap_or_else(|_| "1970-01-01T00:00:00Z".to_string())
 }
 
-fn installed_resource_records(
-    manifest: &SetupManifest,
-    profile: &str,
-) -> Vec<InstalledResourceRecord> {
-    crate::manifest::selected_resources(manifest, profile)
-        .into_iter()
-        .map(|resource| InstalledResourceRecord {
-            id: resource.id.clone(),
-            name: resource.name.clone(),
-            target: resource.target.clone(),
-            file_name: crate::minecraft::managed_resources::managed_file_name(resource),
-            source: resource.source.clone(),
-            hashes: resource.hashes.clone(),
-        })
-        .collect()
-}
-
 fn default_profile_id(manifest: &SetupManifest) -> Result<&str, String> {
     manifest
         .profiles
@@ -373,6 +357,19 @@ impl From<SavedServerRecord> for SavedServerEntry {
             installed_manifest_fingerprint: installed
                 .as_ref()
                 .map(|installed| installed.manifest_fingerprint.clone()),
+        }
+    }
+}
+
+impl From<InstalledResourceSnapshot> for InstalledResourceRecord {
+    fn from(snapshot: InstalledResourceSnapshot) -> Self {
+        Self {
+            id: snapshot.id,
+            name: snapshot.name,
+            target: snapshot.target,
+            file_name: snapshot.file_name,
+            source: snapshot.source,
+            hashes: snapshot.hashes,
         }
     }
 }

@@ -11,9 +11,10 @@
 5. Implement Fabric loader installation through a loader adapter. The app now
    installs validated launcher JSON from the pinned official Fabric Meta endpoint
    without executing an installer JAR.
-6. Resolve Modrinth pinned files, hashes, and compatibility constraints.
+6. Resolve Modrinth pinned files, hashes, and compatibility constraints. Pinned
+   version/project resolution and primary-file validation are in place.
 7. Download resources into managed folders with hash verification and temp-file
-   renames.
+   renames. Direct and Modrinth files use the shared verified install path.
 8. Write server entries through a tested `servers.dat` module.
 9. Add SKlauncher profile adapter behavior.
 10. Add manifest signing or trust pinning before accepting public remote configs.

@@ -128,6 +128,14 @@ fn validate_resources(
         }
 
         validate_resource_target(resource)?;
+        if matches!(resource.resource_type, ManifestResourceType::Mod)
+            && matches!(manifest.minecraft.loader.kind, ManifestLoaderKind::None)
+        {
+            return Err(format!(
+                "Resource {} is a mod, but this setup does not choose a mod loader.",
+                resource.id
+            ));
+        }
         validate_resource_profiles(resource, profile_ids)?;
         validate_resource_source(resource, source_is_local)?;
 

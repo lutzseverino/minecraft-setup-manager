@@ -128,6 +128,8 @@ pub struct SetupActionPreview {
     pub subject: Option<String>,
     pub target: Option<SetupActionTarget>,
     pub file_name: Option<String>,
+    #[serde(skip_serializing)]
+    pub expected_hashes: Option<crate::manifest::schema::ManifestResourceHashes>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -160,7 +162,7 @@ pub enum SetupActionStatus {
     NotImplemented,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SetupActionTarget {
     Mods,

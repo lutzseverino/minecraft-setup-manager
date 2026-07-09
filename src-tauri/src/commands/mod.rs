@@ -62,6 +62,8 @@ pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, Str
         manifest::build_install_plan(&manifest, &request, update_status, installed.as_ref())?;
     planner::ensure_plan_is_supported(&plan)?;
     let client_setup = setup::prepare_client(&plan, &manifest)?;
+    let installed_resources =
+        setup::installed_resources(&manifest, &request.profile, &client_setup.local_install)?;
     let log = minecraft::install_log(&plan, &client_setup);
     crate::app_state::record_installed_server(
         &request.server_id,
@@ -70,6 +72,7 @@ pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, Str
         client_setup.local_install.game_dir.clone(),
         &manifest,
         &manifest_fingerprint,
+        installed_resources,
     )?;
 
     Ok(InstallProgress {
