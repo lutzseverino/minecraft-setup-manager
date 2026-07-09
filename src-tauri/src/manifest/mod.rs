@@ -2,14 +2,16 @@ pub mod fetch;
 pub mod fingerprint;
 pub mod schema;
 
-use crate::commands::{InstallPlan, InstallPlanRequest, PerformanceProfileId};
+use crate::commands::{InstallPlan, InstallPlanRequest, PerformanceProfileId, ServerUpdateStatus};
 use crate::manifest::schema::{ManifestLoaderKind, ManifestResourceTarget, SetupManifest};
 use crate::performance_profiles::PerformanceProfile;
+use crate::planner;
 
 pub fn build_install_plan(
     manifest: &SetupManifest,
     request: &InstallPlanRequest,
     profile: PerformanceProfile,
+    update_status: ServerUpdateStatus,
 ) -> InstallPlan {
     let server_address = if request.server_address.trim().is_empty() {
         manifest.server.address.to_string()
@@ -28,6 +30,7 @@ pub fn build_install_plan(
 
     InstallPlan {
         server_id: request.server_id.clone(),
+        update_status,
         minecraft_version: manifest.minecraft.version.to_string(),
         fabric_loader_version: loader_version,
         game_directory_name: manifest.install.game_directory_name.to_string(),
@@ -35,14 +38,7 @@ pub fn build_install_plan(
         server_address,
         launcher: request.launcher,
         profile: request.profile,
-        steps: vec![
-            "fabric_version".to_string(),
-            "game_directory".to_string(),
-            "launcher_profile".to_string(),
-            "mods_directory".to_string(),
-            "setup_receipt".to_string(),
-            "validation".to_string(),
-        ],
+        actions: planner::build_action_previews(manifest, request, update_status),
         required_mods: manifest
             .resources
             .iter()

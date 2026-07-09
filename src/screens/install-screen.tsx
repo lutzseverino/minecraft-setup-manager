@@ -1,4 +1,5 @@
 import { HammerIcon, PlayIcon } from "lucide-react";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 import { AppButton } from "@/components/app/app-button";
@@ -11,7 +12,11 @@ import {
 import { ProgressLog } from "@/components/app/progress-log";
 import { ScreenShell } from "@/components/app/screen-shell";
 import { StatusRow } from "@/components/app/status-row";
-import type { InstallPlan, InstallProgress } from "@/lib/types";
+import type {
+  InstallPlan,
+  InstallProgress,
+  SetupActionPreview,
+} from "@/lib/types";
 
 type InstallScreenProps = Readonly<{
   installProgress: InstallProgress | null;
@@ -57,16 +62,13 @@ export function InstallScreen({
             </AppCardTitle>
           </AppCardHeader>
           <AppCardContent className="grid gap-2">
-            {plan?.steps.map((step) => (
+            {plan?.actions.map((action) => (
               <StatusRow
-                detail={
-                  step === "game_directory"
-                    ? t("install.steps.game_directory.detail")
-                    : undefined
-                }
-                key={step}
-                label={t(`install.steps.${step}.label`)}
-                tone={installProgress ? "success" : "idle"}
+                detail={actionDetail(action, t)}
+                key={action.id}
+                label={actionLabel(action, t)}
+                meta={t(actionMetaKey(action))}
+                tone={actionTone(action, Boolean(installProgress))}
               />
             ))}
           </AppCardContent>
@@ -75,4 +77,41 @@ export function InstallScreen({
       </div>
     </ScreenShell>
   );
+}
+
+function actionTone(action: SetupActionPreview, hasRun: boolean) {
+  if (action.status === "not_implemented") {
+    return "warning";
+  }
+
+  return hasRun ? "success" : "idle";
+}
+
+function actionMetaKey(action: SetupActionPreview) {
+  if (action.status === "not_implemented") {
+    return "install.actionStatus.notImplemented";
+  }
+
+  if (action.intent === "verify") {
+    return "install.actionStatus.verify";
+  }
+
+  if (action.intent === "update") {
+    return "install.actionStatus.update";
+  }
+
+  return "install.actionStatus.add";
+}
+
+function actionLabel(action: SetupActionPreview, t: TFunction) {
+  return t(`install.actions.${action.kind}.label`, {
+    subject: action.subject,
+  });
+}
+
+function actionDetail(action: SetupActionPreview, t: TFunction) {
+  return t(`install.actions.${action.kind}.detail`, {
+    subject: action.subject,
+    target: action.target ? t(`install.targets.${action.target}`) : undefined,
+  });
 }

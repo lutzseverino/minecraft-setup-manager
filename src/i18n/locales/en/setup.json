@@ -108,25 +108,50 @@
     "cardTitle": "Setup steps",
     "emptyLog": "[waiting] Ready to create the local setup.",
     "failedLog": "[problem] {{message}}",
-    "steps": {
-      "fabric_version": {
-        "label": "Check Fabric"
+    "actionStatus": {
+      "add": "Add",
+      "update": "Update",
+      "verify": "Check",
+      "notImplemented": "Planned"
+    },
+    "targets": {
+      "mods": "mods",
+      "resourcepacks": "resource packs",
+      "shaderpacks": "shader packs",
+      "config": "config files"
+    },
+    "actions": {
+      "verify_loader": {
+        "label": "Check Minecraft version",
+        "detail": "Make sure the right loader is available."
       },
-      "game_directory": {
-        "label": "Make a separate game folder",
-        "detail": "The app creates this folder and saves the setup file there."
+      "install_loader": {
+        "label": "Install Fabric",
+        "detail": "Add Fabric if this server needs it."
       },
-      "launcher_profile": {
-        "label": "Add the launcher profile"
+      "ensure_game_directory": {
+        "label": "Make a clean game folder",
+        "detail": "Use a separate folder named {{subject}}."
       },
-      "mods_directory": {
-        "label": "Make the mods folder"
+      "ensure_launcher_profile": {
+        "label": "Add the launcher profile",
+        "detail": "Create or update {{subject}} in your launcher."
       },
-      "setup_receipt": {
-        "label": "Save the setup file"
+      "sync_resource": {
+        "label": "Add {{subject}}",
+        "detail": "Download or update it in {{target}}."
       },
-      "validation": {
-        "label": "Check everything"
+      "write_server_entry": {
+        "label": "Add the server",
+        "detail": "Add {{subject}} to Minecraft's server list."
+      },
+      "write_setup_receipt": {
+        "label": "Save the setup record",
+        "detail": "Remember this setup so updates can be checked later."
+      },
+      "validate_setup": {
+        "label": "Check everything",
+        "detail": "Check the local files and launcher profile."
       }
     }
   },

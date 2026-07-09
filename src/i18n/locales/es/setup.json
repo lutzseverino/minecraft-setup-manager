@@ -108,25 +108,50 @@
     "cardTitle": "Pasos",
     "emptyLog": "[esperando] Listo para crear la configuracion local.",
     "failedLog": "[problema] {{message}}",
-    "steps": {
-      "fabric_version": {
-        "label": "Revisar Fabric"
+    "actionStatus": {
+      "add": "Anadir",
+      "update": "Actualizar",
+      "verify": "Revisar",
+      "notImplemented": "Planeado"
+    },
+    "targets": {
+      "mods": "mods",
+      "resourcepacks": "paquetes de recursos",
+      "shaderpacks": "shaders",
+      "config": "archivos de configuracion"
+    },
+    "actions": {
+      "verify_loader": {
+        "label": "Revisar la version de Minecraft",
+        "detail": "Comprueba que el loader correcto esta disponible."
       },
-      "game_directory": {
-        "label": "Crear una carpeta separada",
-        "detail": "La app crea esta carpeta y guarda alli el archivo de configuracion."
+      "install_loader": {
+        "label": "Instalar Fabric",
+        "detail": "Anade Fabric si este servidor lo necesita."
       },
-      "launcher_profile": {
-        "label": "Anadir el perfil del launcher"
+      "ensure_game_directory": {
+        "label": "Crear una carpeta limpia",
+        "detail": "Usa una carpeta separada llamada {{subject}}."
       },
-      "mods_directory": {
-        "label": "Crear la carpeta de mods"
+      "ensure_launcher_profile": {
+        "label": "Anadir el perfil del launcher",
+        "detail": "Crea o actualiza {{subject}} en tu launcher."
       },
-      "setup_receipt": {
-        "label": "Guardar el archivo de configuracion"
+      "sync_resource": {
+        "label": "Anadir {{subject}}",
+        "detail": "Lo descarga o actualiza en {{target}}."
       },
-      "validation": {
-        "label": "Revisarlo todo"
+      "write_server_entry": {
+        "label": "Anadir el servidor",
+        "detail": "Anade {{subject}} a la lista de servidores de Minecraft."
+      },
+      "write_setup_receipt": {
+        "label": "Guardar el registro",
+        "detail": "Recuerda esta configuracion para revisar actualizaciones despues."
+      },
+      "validate_setup": {
+        "label": "Revisarlo todo",
+        "detail": "Revisa los archivos locales y el perfil del launcher."
       }
     }
   },

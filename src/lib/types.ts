@@ -19,14 +19,6 @@ export type InstallPhase =
   | "complete"
   | "failed";
 
-export type InstallPlanStepId =
-  | "game_directory"
-  | "fabric_version"
-  | "launcher_profile"
-  | "mods_directory"
-  | "setup_receipt"
-  | "validation";
-
 export type LauncherDetectionStatus = "detected" | "not_found" | "manual";
 
 export type LauncherDetection = Readonly<{
@@ -124,6 +116,7 @@ export type ResolvedServerManifest = Readonly<{
 
 export type InstallPlan = Readonly<{
   serverId: string;
+  updateStatus: ServerUpdateStatus;
   minecraftVersion: string;
   fabricLoaderVersion: string;
   gameDirectoryName: string;
@@ -131,10 +124,41 @@ export type InstallPlan = Readonly<{
   serverAddress: string;
   launcher: LauncherKind;
   profile: PerformanceProfileId;
-  steps: InstallPlanStepId[];
+  actions: SetupActionPreview[];
   requiredMods: string[];
   optionalMods: string[];
   warnings: string[];
+}>;
+
+export type SetupActionKind =
+  | "verify_loader"
+  | "install_loader"
+  | "ensure_game_directory"
+  | "ensure_launcher_profile"
+  | "sync_resource"
+  | "write_server_entry"
+  | "write_setup_receipt"
+  | "validate_setup";
+
+export type SetupActionIntent = "add" | "update" | "verify";
+
+export type SetupActionStatus = "ready" | "not_implemented";
+
+export type SetupActionTarget =
+  | "mods"
+  | "resourcepacks"
+  | "shaderpacks"
+  | "config";
+
+export type SetupActionPreview = Readonly<{
+  id: string;
+  kind: SetupActionKind;
+  intent: SetupActionIntent;
+  status: SetupActionStatus;
+  required: boolean;
+  resourceId: string | null;
+  subject: string | null;
+  target: SetupActionTarget | null;
 }>;
 
 export type StartInstallRequest = InstallPlanRequest;

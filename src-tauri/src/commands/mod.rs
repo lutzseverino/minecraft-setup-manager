@@ -32,11 +32,7 @@ pub fn resolve_server_manifest(
         &manifest,
         &manifest_fingerprint,
     )?;
-    let update_status = match &server.installed_manifest_version {
-        Some(version) if version == &manifest.manifest_version => ServerUpdateStatus::UpToDate,
-        Some(_) => ServerUpdateStatus::UpdateAvailable,
-        None => ServerUpdateStatus::NewSetup,
-    };
+    let update_status = update_status_for(&server, &manifest);
 
     Ok(ResolvedServerManifest {
         server,
@@ -48,17 +44,26 @@ pub fn resolve_server_manifest(
 
 #[tauri::command]
 pub fn get_install_plan(request: InstallPlanRequest) -> Result<InstallPlan, String> {
-    let (manifest, _) = saved_manifest(&request.server_id)?;
+    let server = crate::app_state::saved_server_entry(&request.server_id)?;
+    let (manifest, _) = saved_manifest(&server)?;
     let profile = performance_profiles::resolve_profile(&request.profile);
+    let update_status = update_status_for(&server, &manifest);
 
-    Ok(manifest::build_install_plan(&manifest, &request, profile))
+    Ok(manifest::build_install_plan(
+        &manifest,
+        &request,
+        profile,
+        update_status,
+    ))
 }
 
 #[tauri::command]
 pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, String> {
-    let (manifest, manifest_fingerprint) = saved_manifest(&request.server_id)?;
+    let server = crate::app_state::saved_server_entry(&request.server_id)?;
+    let (manifest, manifest_fingerprint) = saved_manifest(&server)?;
     let profile = performance_profiles::resolve_profile(&request.profile);
-    let plan = manifest::build_install_plan(&manifest, &request, profile);
+    let update_status = update_status_for(&server, &manifest);
+    let plan = manifest::build_install_plan(&manifest, &request, profile, update_status);
     let client_setup = setup::prepare_client(&plan)?;
     let log = minecraft::install_log(&plan, &client_setup);
     crate::app_state::record_installed_server(
@@ -94,10 +99,23 @@ pub fn export_diagnostics() -> Result<DiagnosticBundle, String> {
     minecraft::local_install::export_install_report()
 }
 
-fn saved_manifest(server_id: &str) -> Result<(manifest::schema::SetupManifest, String), String> {
-    let manifest_url = crate::app_state::saved_server_manifest_url(server_id)?;
+fn saved_manifest(
+    server: &SavedServerEntry,
+) -> Result<(manifest::schema::SetupManifest, String), String> {
+    let manifest_url = crate::app_state::saved_server_manifest_url(&server.id)?;
     let manifest = manifest::fetch::fetch_manifest(&manifest_url)?;
     let manifest_fingerprint = manifest::fingerprint::manifest_fingerprint(&manifest)?;
 
     Ok((manifest, manifest_fingerprint))
+}
+
+fn update_status_for(
+    server: &SavedServerEntry,
+    manifest: &manifest::schema::SetupManifest,
+) -> ServerUpdateStatus {
+    match &server.installed_manifest_version {
+        Some(version) if version == &manifest.manifest_version => ServerUpdateStatus::UpToDate,
+        Some(_) => ServerUpdateStatus::UpdateAvailable,
+        None => ServerUpdateStatus::NewSetup,
+    }
 }

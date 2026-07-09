@@ -49,6 +49,17 @@ pub fn list_saved_servers() -> Result<Vec<SavedServerEntry>, String> {
     Ok(state.servers.into_iter().map(Into::into).collect())
 }
 
+pub fn saved_server_entry(server_id: &str) -> Result<SavedServerEntry, String> {
+    let state = read_state()?;
+
+    state
+        .servers
+        .into_iter()
+        .find(|server| server.id == server_id)
+        .map(Into::into)
+        .ok_or_else(|| "Choose or add a server before starting setup.".to_string())
+}
+
 pub fn saved_server_manifest_url(server_id: &str) -> Result<String, String> {
     let state = read_state()?;
 

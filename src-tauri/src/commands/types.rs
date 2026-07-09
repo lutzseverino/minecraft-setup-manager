@@ -105,6 +105,7 @@ pub struct LauncherDetection {
 #[serde(rename_all = "camelCase")]
 pub struct InstallPlan {
     pub server_id: String,
+    pub update_status: ServerUpdateStatus,
     pub minecraft_version: String,
     pub fabric_loader_version: String,
     pub game_directory_name: String,
@@ -112,10 +113,60 @@ pub struct InstallPlan {
     pub server_address: String,
     pub launcher: LauncherKind,
     pub profile: PerformanceProfileId,
-    pub steps: Vec<String>,
+    pub actions: Vec<SetupActionPreview>,
     pub required_mods: Vec<String>,
     pub optional_mods: Vec<String>,
     pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupActionPreview {
+    pub id: String,
+    pub kind: SetupActionKind,
+    pub intent: SetupActionIntent,
+    pub status: SetupActionStatus,
+    pub required: bool,
+    pub resource_id: Option<String>,
+    pub subject: Option<String>,
+    pub target: Option<SetupActionTarget>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SetupActionKind {
+    VerifyLoader,
+    InstallLoader,
+    EnsureGameDirectory,
+    EnsureLauncherProfile,
+    SyncResource,
+    WriteServerEntry,
+    WriteSetupReceipt,
+    ValidateSetup,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SetupActionIntent {
+    Add,
+    Update,
+    Verify,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SetupActionStatus {
+    Ready,
+    NotImplemented,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SetupActionTarget {
+    Mods,
+    Resourcepacks,
+    Shaderpacks,
+    Config,
 }
 
 #[derive(Debug, Clone, Serialize)]
