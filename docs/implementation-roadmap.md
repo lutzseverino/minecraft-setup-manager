@@ -23,7 +23,7 @@
    origin changes.
 4. Add plan-level rollback or a durable setup journal for stronger recovery from
    failures between individually atomic steps.
-5. Add code signing, macOS notarization, release publishing, and update delivery
-   for the desktop app itself.
+5. Add recognized publisher signing, macOS notarization, and app update delivery
+   before treating the published development binaries as production-ready.
 6. Define the future Minecraft server plugin around the existing manifest
    contract and compatibility status endpoint.
