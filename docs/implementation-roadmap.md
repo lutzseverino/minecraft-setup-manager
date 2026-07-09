@@ -1,6 +1,7 @@
 # Implementation Roadmap
 
-1. Add semantic manifest validation and schema-version migration rules.
+1. Add semantic manifest validation and schema-version migration rules. Strict
+   schema-version-1 validation is in place; future schema migrations remain.
 2. Replace string setup steps with typed setup actions and a pure planner.
 3. Record verified local resource file hashes after downloads. Direct resources
    are supported; resolved Modrinth files remain.

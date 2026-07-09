@@ -24,6 +24,7 @@ Current implementation:
 - Saves server entries in app state.
 - Discovers manifests from `https://<host>/.well-known/minecraft-setup-manager/manifest.json`.
 - Parses and fingerprints setup manifests.
+- Rejects unsupported, ambiguous, or unsafe manifest data before saving it.
 - Uses server-defined setup profiles and explicit resource membership.
 - Builds setup plans from saved manifests.
 - Creates the managed game folder and setup receipt.
@@ -87,6 +88,12 @@ Server-specific manifests should live outside this generic app repository.
 Profiles and their resource sets are also manifest data: each resource can list
 the profile IDs that should receive it. Resources without a profile list apply
 to every profile.
+
+Schema version 1 is strict. Unknown fields, unsafe path names, duplicate IDs or
+overlapping destination files, malformed hashes, invalid profile references,
+and inconsistent resource targets are rejected. Direct downloads require
+public HTTPS and a pinned SHA-256 or SHA-512 hash. Loopback HTTP is accepted only
+when the manifest itself is loaded from the local computer for development.
 
 ## Architecture
 

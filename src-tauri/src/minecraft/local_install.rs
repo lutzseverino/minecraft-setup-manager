@@ -201,5 +201,6 @@ pub fn export_install_report() -> Result<crate::commands::DiagnosticBundle, Stri
 }
 
 fn game_directory_path(game_directory_name: &str) -> Result<PathBuf, String> {
-    Ok(paths::app_support_dir(APP_SUPPORT_NAME)?.join(game_directory_name))
+    let root = paths::app_support_dir(APP_SUPPORT_NAME)?;
+    crate::system::path_safety::safe_child_path(&root, game_directory_name, "game folder")
 }

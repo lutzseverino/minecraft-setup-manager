@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SetupManifest {
     pub schema_version: u16,
     pub manifest_version: String,
@@ -18,21 +18,21 @@ pub struct SetupManifest {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManifestServer {
     pub name: String,
     pub address: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManifestMinecraft {
     pub version: String,
     pub loader: ManifestLoader,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManifestLoader {
     pub kind: ManifestLoaderKind,
     pub version: Option<String>,
@@ -46,14 +46,14 @@ pub enum ManifestLoaderKind {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManifestInstall {
     pub game_directory_name: String,
     pub launcher_profile_name: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManifestPerformanceProfile {
     pub id: String,
     pub label: String,
@@ -63,7 +63,7 @@ pub struct ManifestPerformanceProfile {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManifestResource {
     pub id: String,
     pub name: String,
@@ -88,7 +88,7 @@ pub enum ManifestResourceType {
     Config,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ManifestResourceTarget {
     Mods,
@@ -98,21 +98,21 @@ pub enum ManifestResourceTarget {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(tag = "kind", rename_all = "snake_case")]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ManifestResourceSource {
     Modrinth { project: String, version: String },
     Direct { url: String },
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManifestResourceHashes {
     pub sha512: Option<String>,
     pub sha256: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManifestServerEntry {
     pub name: String,
     pub address: String,

@@ -23,6 +23,11 @@ TypeScript frontend.
   server entry, file repair, and validation modules.
 - `src-tauri/src/system/` owns platform path helpers.
 
+Manifest data crosses a strict validation boundary before it can be saved,
+planned, or applied. Validation owns schema support, IDs, limits, relationships,
+hash and URL policy, and portable path names. Filesystem owners repeat path and
+symlink checks before mutation as defense in depth.
+
 ## Dependency Direction
 
 React screens call typed functions from `src/lib/tauri.ts`. They do not import
@@ -53,5 +58,5 @@ or updates the official Minecraft Launcher profile, validates those local files
 and launcher settings, and exports a small report.
 
 Fabric download/install, Modrinth file resolution, SKlauncher profile writes,
-manifest signing, and `servers.dat` writes remain backend-owned modules with
-adapter boundaries.
+manifest trust pinning, and `servers.dat` writes remain backend-owned modules
+with adapter boundaries.

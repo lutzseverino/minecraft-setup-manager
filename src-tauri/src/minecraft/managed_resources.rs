@@ -1,6 +1,6 @@
 use std::fs;
 use std::io::Read;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use sha2::{Digest, Sha256, Sha512};
 
@@ -328,22 +328,18 @@ fn managed_file_path(
     target: SetupActionTarget,
     file_name: &str,
 ) -> Result<PathBuf, String> {
-    if !is_safe_file_name(file_name) {
-        return Err(format!(
-            "Managed resource file name {file_name:?} must be a plain file name."
-        ));
-    }
-
-    Ok(game_dir.join(target_dir_name(target)).join(file_name))
+    crate::system::path_safety::validate_portable_component(
+        file_name,
+        "managed resource file name",
+    )?;
+    let target_dir = game_dir.join(target_dir_name(target));
+    crate::system::path_safety::reject_symlink(&target_dir, "managed resource folder")?;
+    Ok(target_dir.join(file_name))
 }
 
 fn is_safe_file_name(file_name: &str) -> bool {
-    !file_name.trim().is_empty()
-        && !file_name.contains('/')
-        && !file_name.contains('\\')
-        && Path::new(file_name)
-            .components()
-            .all(|component| matches!(component, Component::Normal(_)))
+    crate::system::path_safety::validate_portable_component(file_name, "managed resource file name")
+        .is_ok()
 }
 
 fn target_dir_name(target: SetupActionTarget) -> &'static str {
@@ -420,7 +416,7 @@ mod tests {
         )
         .expect_err("expected unsafe path error");
 
-        assert!(error.contains("plain file name"));
+        assert!(error.contains("managed resource file name"));
     }
 
     #[test]
@@ -434,7 +430,7 @@ mod tests {
         )
         .expect_err("expected unsafe path error");
 
-        assert!(error.contains("plain file name"));
+        assert!(error.contains("managed resource file name"));
     }
 
     #[test]

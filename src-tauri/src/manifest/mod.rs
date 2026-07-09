@@ -1,6 +1,7 @@
 pub mod fetch;
 pub mod fingerprint;
 pub mod schema;
+pub mod validation;
 
 use crate::app_state::InstalledServerSnapshot;
 use crate::commands::{InstallPlan, InstallPlanRequest, ServerUpdateStatus};
