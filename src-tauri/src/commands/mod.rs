@@ -73,7 +73,7 @@ pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, Str
         update_status,
         installed.as_ref(),
     );
-    let client_setup = setup::prepare_client(&plan)?;
+    let client_setup = setup::prepare_client(&plan, &manifest)?;
     let log = minecraft::install_log(&plan, &client_setup);
     crate::app_state::record_installed_server(
         &request.server_id,

@@ -1,5 +1,6 @@
 use crate::commands::InstallPlan;
 use crate::launcher::{self, LauncherProfileResult, LauncherProfileValidation};
+use crate::manifest::schema::SetupManifest;
 use crate::minecraft::local_install::{self, LocalInstallResult, LocalValidationResult};
 
 #[derive(Debug, Clone)]
@@ -14,10 +15,13 @@ pub struct ClientSetupValidation {
     pub launcher_profile: LauncherProfileValidation,
 }
 
-pub fn prepare_client(plan: &InstallPlan) -> Result<ClientSetupResult, String> {
+pub fn prepare_client(
+    plan: &InstallPlan,
+    manifest: &SetupManifest,
+) -> Result<ClientSetupResult, String> {
     launcher::validate_profile_prerequisites(plan)?;
 
-    let local_install = local_install::prepare_local_install(plan)?;
+    let local_install = local_install::prepare_local_install(plan, manifest)?;
     let launcher_profile = launcher::ensure_profile(plan, &local_install.game_dir)?;
 
     Ok(ClientSetupResult {

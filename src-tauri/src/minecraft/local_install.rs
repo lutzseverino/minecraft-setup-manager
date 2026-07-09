@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use serde::Serialize;
 
 use crate::commands::InstallPlan;
+use crate::manifest::schema::SetupManifest;
 use crate::minecraft::managed_resources::{self, ManagedResourceAction};
 use crate::system::{paths, APP_SUPPORT_NAME};
 
@@ -40,7 +41,10 @@ struct SetupReceipt<'a> {
     optional_mods: &'a [String],
 }
 
-pub fn prepare_local_install(plan: &InstallPlan) -> Result<LocalInstallResult, String> {
+pub fn prepare_local_install(
+    plan: &InstallPlan,
+    manifest: &SetupManifest,
+) -> Result<LocalInstallResult, String> {
     let game_dir = game_directory_path(&plan.game_directory_name)?;
     let mods_dir = game_dir.join("mods");
     let resourcepacks_dir = game_dir.join("resourcepacks");
@@ -72,7 +76,8 @@ pub fn prepare_local_install(plan: &InstallPlan) -> Result<LocalInstallResult, S
         )
     })?;
 
-    let resource_results = managed_resources::apply_plan_resource_actions(plan, &game_dir)?;
+    let resource_results =
+        managed_resources::apply_plan_resource_actions(plan, manifest, &game_dir)?;
 
     let receipt_path = game_dir.join(RECEIPT_FILE_NAME);
     let receipt = SetupReceipt {
@@ -105,6 +110,17 @@ pub fn prepare_local_install(plan: &InstallPlan) -> Result<LocalInstallResult, S
         resource_results
             .into_iter()
             .map(|result| match result.action {
+                ManagedResourceAction::Downloaded => format!(
+                    "Downloaded managed resource {} to {}.",
+                    result.resource_id,
+                    result
+                        .path
+                        .map(|path| path.display().to_string())
+                        .unwrap_or_else(|| "unknown path".to_string())
+                ),
+                ManagedResourceAction::Verified => {
+                    format!("Managed resource {} was already ready.", result.resource_id)
+                }
                 ManagedResourceAction::Removed => format!(
                     "Removed managed resource {} at {}.",
                     result.resource_id,
@@ -119,6 +135,14 @@ pub fn prepare_local_install(plan: &InstallPlan) -> Result<LocalInstallResult, S
                 ),
                 ManagedResourceAction::SkippedNoFileName => format!(
                     "Skipped removing managed resource {} because no managed file name is known.",
+                    result.resource_id
+                ),
+                ManagedResourceAction::SkippedUnsupportedSource => format!(
+                    "Skipped managed resource {} because its source is not supported yet.",
+                    result.resource_id
+                ),
+                ManagedResourceAction::SkippedMissingHash => format!(
+                    "Skipped managed resource {} because it does not have a verification hash.",
                     result.resource_id
                 ),
             }),

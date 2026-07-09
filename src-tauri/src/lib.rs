@@ -1,5 +1,6 @@
 mod app_state;
 mod commands;
+mod http_client;
 mod launcher;
 mod manifest;
 mod minecraft;

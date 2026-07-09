@@ -7,7 +7,9 @@ use crate::commands::{
 };
 use crate::manifest::schema::{ManifestLoaderKind, ManifestResource, SetupManifest};
 use crate::manifest::selected_resources;
-use crate::minecraft::managed_resources::{managed_file_name, setup_action_target};
+use crate::minecraft::managed_resources::{
+    can_sync_resource, managed_file_name, setup_action_target,
+};
 
 pub fn build_action_previews(
     manifest: &SetupManifest,
@@ -156,7 +158,11 @@ fn resource_actions(
                 id: format!("resource_{}", resource.id),
                 kind: SetupActionKind::SyncResource,
                 intent: resource_intent(resource, installed_resource),
-                status: SetupActionStatus::NotImplemented,
+                status: if can_sync_resource(resource) {
+                    SetupActionStatus::Ready
+                } else {
+                    SetupActionStatus::NotImplemented
+                },
                 required: resource.required,
                 resource_id: Some(resource.id.clone()),
                 subject: Some(resource.name.clone()),
