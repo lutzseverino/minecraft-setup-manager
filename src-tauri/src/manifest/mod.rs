@@ -4,7 +4,7 @@ pub mod schema;
 pub mod validation;
 
 use crate::app_state::InstalledServerSnapshot;
-use crate::commands::{InstallPlan, InstallPlanRequest, ServerUpdateStatus};
+use crate::commands::{InstallPlan, InstallPlanRequest, ServerUpdateStatus, SetupResourcePreview};
 use crate::manifest::schema::{ManifestResource, ManifestResourceTarget, SetupManifest};
 use crate::planner;
 
@@ -19,11 +19,6 @@ pub fn build_install_plan(
         .iter()
         .find(|profile| profile.id == request.profile)
         .ok_or_else(|| "Choose one of the setup options provided by this server.".to_string())?;
-    let server_address = if request.server_address.trim().is_empty() {
-        manifest.server.address.to_string()
-    } else {
-        request.server_address.trim().to_string()
-    };
     Ok(InstallPlan {
         server_id: request.server_id.clone(),
         update_status,
@@ -32,12 +27,21 @@ pub fn build_install_plan(
         loader_version: manifest.minecraft.loader.version.clone(),
         game_directory_name: manifest.install.game_directory_name.to_string(),
         server_name: manifest.display_name.to_string(),
-        server_address,
+        server_address: manifest.server.address.to_string(),
+        launcher_profile_name: manifest.install.launcher_profile_name.to_string(),
         launcher: request.launcher,
         profile: request.profile.clone(),
         profile_label: profile.label.clone(),
         recommended_memory_mb: profile.recommended_memory_mb,
         actions: planner::build_action_previews(manifest, request, update_status, installed),
+        resources: selected_resources(manifest, &request.profile)
+            .into_iter()
+            .map(|resource| SetupResourcePreview {
+                id: resource.id.clone(),
+                source: resource.source.clone(),
+                hashes: resource.hashes.clone(),
+            })
+            .collect(),
         required_mods: selected_resources(manifest, &request.profile)
             .into_iter()
             .filter(|resource| resource.required)
@@ -121,7 +125,6 @@ mod tests {
             manifest_fingerprint: "sha256:example".to_string(),
             launcher: LauncherKind::Official,
             profile: "missing".to_string(),
-            server_address: "play.example.com".to_string(),
         };
 
         let error = build_install_plan(&manifest, &request, ServerUpdateStatus::NewSetup, None)
@@ -138,7 +141,6 @@ mod tests {
             manifest_fingerprint: "sha256:example".to_string(),
             launcher: LauncherKind::Official,
             profile: "light".to_string(),
-            server_address: "play.example.com".to_string(),
         };
 
         let plan = build_install_plan(&manifest, &request, ServerUpdateStatus::NewSetup, None)

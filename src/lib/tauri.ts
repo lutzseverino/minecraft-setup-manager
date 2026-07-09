@@ -123,6 +123,7 @@ export async function resolveServerManifest(
     selectedProfile: "balanced",
     installedManifestVersion: null,
     installedManifestFingerprint: null,
+    needsRepair: false,
   } satisfies SavedServerEntry;
 
   return invokeOrFallback<ResolvedServerManifest>(
@@ -152,7 +153,8 @@ export async function getInstallPlan(request: InstallPlanRequest) {
       loaderVersion: demoManifest.minecraft.loader.version ?? null,
       gameDirectoryName: demoManifest.install.gameDirectoryName,
       serverName: demoManifest.displayName,
-      serverAddress: request.serverAddress || demoManifest.server.address,
+      serverAddress: demoManifest.server.address,
+      launcherProfileName: demoManifest.install.launcherProfileName,
       launcher: request.launcher,
       profile: request.profile,
       profileLabel:
@@ -251,6 +253,11 @@ export async function getInstallPlan(request: InstallPlanRequest) {
           fileName: null,
         },
       ],
+      resources: demoManifest.resources.map((resource) => ({
+        id: resource.id,
+        source: resource.source,
+        hashes: resource.hashes,
+      })),
       requiredMods: demoManifest.resources
         .filter((resource) => resource.required)
         .map((resource) => resource.name),

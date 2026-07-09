@@ -60,10 +60,8 @@ export function useSetupWizard() {
       manifestFingerprint: resolvedServer?.manifestFingerprint ?? "",
       launcher,
       profile,
-      serverAddress:
-        resolvedServer?.manifest.server.address ?? serverAddress.trim(),
     }),
-    [launcher, profile, resolvedServer, serverAddress],
+    [launcher, profile, resolvedServer],
   );
 
   useEffect(() => {

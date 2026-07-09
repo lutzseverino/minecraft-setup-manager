@@ -2,6 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 
 use crate::commands::InstallPlan;
 use crate::manifest::schema::SetupManifest;
@@ -50,7 +51,7 @@ pub fn prepare_local_install(
     plan: &InstallPlan,
     manifest: &SetupManifest,
 ) -> Result<LocalInstallResult, String> {
-    let game_dir = game_directory_path(&plan.game_directory_name)?;
+    let game_dir = game_directory_path(plan)?;
     let mods_dir = game_dir.join("mods");
     let resourcepacks_dir = game_dir.join("resourcepacks");
     let shaderpacks_dir = game_dir.join("shaderpacks");
@@ -161,7 +162,7 @@ pub fn validate_local_install(
     plan: &InstallPlan,
     manifest: &SetupManifest,
 ) -> Result<LocalValidationResult, String> {
-    let game_dir = game_directory_path(&plan.game_directory_name)?;
+    let game_dir = game_directory_path(plan)?;
     let receipt_path = game_dir.join(RECEIPT_FILE_NAME);
 
     let receipt_exists = receipt_path.is_file();
@@ -239,7 +240,40 @@ pub fn export_install_report() -> Result<crate::commands::DiagnosticBundle, Stri
     })
 }
 
-fn game_directory_path(game_directory_name: &str) -> Result<PathBuf, String> {
+fn game_directory_path(plan: &InstallPlan) -> Result<PathBuf, String> {
     let root = paths::app_support_dir(APP_SUPPORT_NAME)?;
-    crate::system::path_safety::safe_child_path(&root, game_directory_name, "game folder")
+    crate::system::path_safety::reject_symlink(&root, "app data folder")?;
+    let instances =
+        crate::system::path_safety::safe_child_path(&root, "instances", "instances folder")?;
+    let server_root = crate::system::path_safety::safe_child_path(
+        &instances,
+        &instance_directory_name(&plan.server_id),
+        "server instance folder",
+    )?;
+    crate::system::path_safety::safe_child_path(
+        &server_root,
+        &plan.game_directory_name,
+        "game folder",
+    )
+}
+
+fn instance_directory_name(server_id: &str) -> String {
+    let digest = Sha256::digest(server_id.as_bytes());
+    digest.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn server_instances_have_stable_distinct_directory_names() {
+        let first = instance_directory_name("server-a@example.com");
+        let same = instance_directory_name("server-a@example.com");
+        let second = instance_directory_name("server-b@example.com");
+
+        assert_eq!(first, same);
+        assert_ne!(first, second);
+        assert_eq!(first.len(), 64);
+    }
 }

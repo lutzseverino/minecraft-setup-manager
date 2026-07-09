@@ -145,6 +145,10 @@ fn ensure_validation_passed(result: &ValidationResult) -> Result<(), String> {
 }
 
 fn update_status_for(server: &SavedServerEntry, manifest_fingerprint: &str) -> ServerUpdateStatus {
+    if server.needs_repair {
+        return ServerUpdateStatus::UpdateAvailable;
+    }
+
     match (
         &server.installed_manifest_version,
         &server.installed_manifest_fingerprint,
@@ -190,6 +194,17 @@ mod tests {
     }
 
     #[test]
+    fn update_status_marks_old_install_layouts_for_repair() {
+        let mut server = saved_server(Some("1"), Some("sha256:same"));
+        server.needs_repair = true;
+
+        assert_eq!(
+            ServerUpdateStatus::UpdateAvailable,
+            update_status_for(&server, "sha256:same")
+        );
+    }
+
+    #[test]
     fn apply_requires_the_exact_reviewed_manifest_fingerprint() {
         assert!(ensure_manifest_was_approved("sha256:same", "sha256:same").is_ok());
         assert!(ensure_manifest_was_approved("sha256:old", "sha256:new").is_err());
@@ -228,6 +243,7 @@ mod tests {
             selected_profile: "balanced".to_string(),
             installed_manifest_version: installed_manifest_version.map(str::to_string),
             installed_manifest_fingerprint: installed_manifest_fingerprint.map(str::to_string),
+            needs_repair: false,
         }
     }
 }

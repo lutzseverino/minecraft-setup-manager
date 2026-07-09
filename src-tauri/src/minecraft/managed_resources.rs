@@ -17,6 +17,7 @@ use crate::minecraft::modrinth;
 use crate::system::atomic_file;
 
 const MAX_RESOURCE_BYTES: u64 = 512 * 1024 * 1024;
+const MAX_TOTAL_RESOURCE_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ManagedResourceAction {
@@ -52,6 +53,7 @@ struct ResolvedManagedResource {
     url: String,
     file_name: String,
     hashes: ManifestResourceHashes,
+    size: Option<u64>,
 }
 
 pub fn apply_plan_resource_actions(
@@ -61,10 +63,25 @@ pub fn apply_plan_resource_actions(
 ) -> Result<Vec<ManagedResourceResult>, String> {
     let resources = resolve_resources(plan, manifest)?;
     validate_unique_destinations(&resources)?;
-    let mut results = resources
+    let known_total = resources
         .iter()
-        .map(|resource| sync_resource(resource, game_dir))
-        .collect::<Result<Vec<_>, _>>()?;
+        .filter_map(|resource| resource.size)
+        .try_fold(0_u64, |total, size| total.checked_add(size))
+        .ok_or_else(|| "The setup download size is too large.".to_string())?;
+    if known_total > MAX_TOTAL_RESOURCE_BYTES {
+        return Err("The setup requests more than 2 GB of downloads.".to_string());
+    }
+
+    let mut remaining_download_bytes = MAX_TOTAL_RESOURCE_BYTES;
+    let mut results = Vec::with_capacity(resources.len());
+    for resource in &resources {
+        let (result, downloaded_bytes) =
+            sync_resource(resource, plan, game_dir, remaining_download_bytes)?;
+        remaining_download_bytes = remaining_download_bytes
+            .checked_sub(downloaded_bytes)
+            .ok_or_else(|| "The setup download size is too large.".to_string())?;
+        results.push(result);
+    }
     let protected_paths = results
         .iter()
         .filter_map(|result| result.path.clone())
@@ -144,6 +161,7 @@ fn resolve_resource(
             file_name: managed_file_name(resource)
                 .ok_or_else(|| format!("Direct resource {} has no safe file name.", resource.id))?,
             hashes: resource.hashes.clone(),
+            size: None,
         }),
         ManifestResourceSource::Modrinth { .. } => {
             let resolved = modrinth::resolve_resource(resource, plan)?;
@@ -153,6 +171,7 @@ fn resolve_resource(
                 url: resolved.url,
                 file_name: resolved.file_name,
                 hashes: resolved.hashes,
+                size: Some(resolved.size),
             })
         }
     }
@@ -174,18 +193,40 @@ fn validate_unique_destinations(resources: &[ResolvedManagedResource]) -> Result
 
 fn sync_resource(
     resource: &ResolvedManagedResource,
+    plan: &InstallPlan,
     game_dir: &Path,
-) -> Result<ManagedResourceResult, String> {
+    remaining_download_bytes: u64,
+) -> Result<(ManagedResourceResult, u64), String> {
     let path = managed_file_path(game_dir, resource.target, &resource.file_name)?;
+    crate::system::path_safety::reject_symlink(&path, "managed resource file")?;
+
+    if path.exists() && !path.is_file() {
+        return Err(format!(
+            "Cannot install {} because {} is not a regular file.",
+            resource.resource_id,
+            path.display()
+        ));
+    }
 
     if path.is_file() && file_matches_hashes(&path, &resource.hashes)? {
-        return Ok(ManagedResourceResult {
-            resource_id: resource.resource_id.clone(),
-            action: ManagedResourceAction::Verified,
-            path: Some(path),
-            file_name: Some(resource.file_name.clone()),
-            hashes: Some(resource.hashes.clone()),
-        });
+        return Ok((
+            ManagedResourceResult {
+                resource_id: resource.resource_id.clone(),
+                action: ManagedResourceAction::Verified,
+                path: Some(path),
+                file_name: Some(resource.file_name.clone()),
+                hashes: Some(resource.hashes.clone()),
+            },
+            0,
+        ));
+    }
+
+    if path.is_file() && !can_replace_managed_file(plan, resource, &path)? {
+        return Err(format!(
+            "Cannot update {} because {} was changed or is not owned by this app. Move the file aside and try again.",
+            resource.resource_id,
+            path.display()
+        ));
     }
 
     let parent = path
@@ -201,10 +242,13 @@ fn sync_resource(
         ".minecraft-setup-manager-{}.tmp",
         resource.file_name
     ));
-    http_client::download_to_path(
+    if remaining_download_bytes == 0 {
+        return Err("The setup requests more than 2 GB of downloads.".to_string());
+    }
+    let downloaded_bytes = http_client::download_to_path(
         &resource.url,
         &temp_path,
-        MAX_RESOURCE_BYTES,
+        MAX_RESOURCE_BYTES.min(remaining_download_bytes),
         "setup resource",
     )?;
 
@@ -222,13 +266,37 @@ fn sync_resource(
         &format!("managed resource {}", resource.resource_id),
     )?;
 
-    Ok(ManagedResourceResult {
-        resource_id: resource.resource_id.clone(),
-        action: ManagedResourceAction::Downloaded,
-        path: Some(path),
-        file_name: Some(resource.file_name.clone()),
-        hashes: Some(resource.hashes.clone()),
-    })
+    Ok((
+        ManagedResourceResult {
+            resource_id: resource.resource_id.clone(),
+            action: ManagedResourceAction::Downloaded,
+            path: Some(path),
+            file_name: Some(resource.file_name.clone()),
+            hashes: Some(resource.hashes.clone()),
+        },
+        downloaded_bytes,
+    ))
+}
+
+fn can_replace_managed_file(
+    plan: &InstallPlan,
+    resource: &ResolvedManagedResource,
+    path: &Path,
+) -> Result<bool, String> {
+    let previous_hashes = plan.actions.iter().find_map(|action| {
+        (matches!(action.kind, SetupActionKind::RemoveResource)
+            && matches!(action.status, SetupActionStatus::Ready)
+            && action.resource_id.as_deref() == Some(resource.resource_id.as_str())
+            && action.target == Some(resource.target)
+            && action.file_name.as_deref() == Some(resource.file_name.as_str()))
+        .then_some(action.expected_hashes.as_ref())
+        .flatten()
+    });
+
+    match previous_hashes {
+        Some(hashes) => file_matches_hashes(path, hashes),
+        None => Ok(false),
+    }
 }
 
 fn remove_stale_resources(
@@ -646,7 +714,7 @@ mod tests {
         let resource = direct_resource_at("direct-mod", "direct.jar", &url, hashes(&expected_hash));
 
         let error = apply_plan_resource_actions(
-            &plan_with_sync("direct-mod", "direct.jar"),
+            &plan_with_owned_update("direct-mod", "direct.jar", b"existing file"),
             &manifest_with_resources(vec![resource]),
             &game_dir,
         )
@@ -656,6 +724,30 @@ mod tests {
         assert_eq!(
             fs::read(installed_path).expect("read existing file"),
             b"existing file"
+        );
+    }
+
+    #[test]
+    fn rejects_an_existing_file_the_app_does_not_own() {
+        let game_dir = test_dir("reject-unowned-direct-resource");
+        let mods_dir = game_dir.join("mods");
+        fs::create_dir_all(&mods_dir).expect("create mods dir");
+        let installed_path = mods_dir.join("direct.jar");
+        fs::write(&installed_path, b"user file").expect("write existing file");
+        let resource =
+            direct_resource("direct-mod", "direct.jar", hashes_for_bytes(b"server file"));
+
+        let error = apply_plan_resource_actions(
+            &plan_with_sync("direct-mod", "direct.jar"),
+            &manifest_with_resources(vec![resource]),
+            &game_dir,
+        )
+        .expect_err("reject unowned destination");
+
+        assert!(error.contains("not owned by this app"));
+        assert_eq!(
+            fs::read(installed_path).expect("read existing file"),
+            b"user file"
         );
     }
 
@@ -689,6 +781,39 @@ mod tests {
         }])
     }
 
+    fn plan_with_owned_update(
+        resource_id: &str,
+        file_name: &str,
+        previous_bytes: &[u8],
+    ) -> InstallPlan {
+        plan_with_actions(vec![
+            SetupActionPreview {
+                id: format!("resource_{resource_id}"),
+                kind: SetupActionKind::SyncResource,
+                intent: SetupActionIntent::Update,
+                status: SetupActionStatus::Ready,
+                required: true,
+                resource_id: Some(resource_id.to_string()),
+                subject: Some(resource_id.to_string()),
+                target: Some(SetupActionTarget::Mods),
+                file_name: Some(file_name.to_string()),
+                expected_hashes: None,
+            },
+            SetupActionPreview {
+                id: format!("remove_replaced_resource_{resource_id}"),
+                kind: SetupActionKind::RemoveResource,
+                intent: SetupActionIntent::Remove,
+                status: SetupActionStatus::Ready,
+                required: false,
+                resource_id: Some(resource_id.to_string()),
+                subject: Some(resource_id.to_string()),
+                target: Some(SetupActionTarget::Mods),
+                file_name: Some(file_name.to_string()),
+                expected_hashes: Some(hashes_for_bytes(previous_bytes)),
+            },
+        ])
+    }
+
     fn plan_with_actions(actions: Vec<SetupActionPreview>) -> InstallPlan {
         InstallPlan {
             server_id: "example".to_string(),
@@ -699,11 +824,13 @@ mod tests {
             game_directory_name: "Example".to_string(),
             server_name: "Example".to_string(),
             server_address: "play.example.com".to_string(),
+            launcher_profile_name: "Example".to_string(),
             launcher: LauncherKind::Official,
             profile: "balanced".to_string(),
             profile_label: "Balanced".to_string(),
             recommended_memory_mb: 4096,
             actions,
+            resources: vec![],
             required_mods: vec![],
             optional_mods: vec![],
             warnings: vec![],

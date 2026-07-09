@@ -16,6 +16,7 @@ use crate::system::{atomic_file, paths, APP_SUPPORT_NAME};
 
 const STATE_FILE_NAME: &str = "state.json";
 const MANIFEST_CACHE_DIR: &str = "manifests";
+const CURRENT_INSTALL_LAYOUT_VERSION: u16 = 1;
 static STATE_LOCK: Mutex<()> = Mutex::new(());
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -49,6 +50,8 @@ struct InstalledManifestRecord {
     manifest_id: String,
     manifest_version: String,
     manifest_fingerprint: String,
+    #[serde(default)]
+    layout_version: u16,
     #[serde(default)]
     resources: Vec<InstalledResourceRecord>,
 }
@@ -194,9 +197,10 @@ pub fn record_installed_server(
         manifest_id: manifest.id.clone(),
         manifest_version: manifest.manifest_version.clone(),
         manifest_fingerprint: manifest_fingerprint.to_string(),
+        layout_version: CURRENT_INSTALL_LAYOUT_VERSION,
         resources: resources.into_iter().map(Into::into).collect(),
     });
-    state.schema_version = 3;
+    state.schema_version = 4;
     let entry = record.clone().into();
     write_state(&state)?;
 
@@ -341,6 +345,9 @@ fn default_profile_id(manifest: &SetupManifest) -> Result<&str, String> {
 impl From<SavedServerRecord> for SavedServerEntry {
     fn from(record: SavedServerRecord) -> Self {
         let installed = record.installed;
+        let needs_repair = installed
+            .as_ref()
+            .is_some_and(|installed| installed.layout_version != CURRENT_INSTALL_LAYOUT_VERSION);
 
         Self {
             id: record.id,
@@ -357,6 +364,7 @@ impl From<SavedServerRecord> for SavedServerEntry {
             installed_manifest_fingerprint: installed
                 .as_ref()
                 .map(|installed| installed.manifest_fingerprint.clone()),
+            needs_repair,
         }
     }
 }

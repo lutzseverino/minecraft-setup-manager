@@ -570,7 +570,6 @@ mod tests {
             manifest_fingerprint: "sha256:example".to_string(),
             launcher: LauncherKind::Official,
             profile: "balanced".to_string(),
-            server_address: "play.example.com".to_string(),
         }
     }
 
@@ -584,11 +583,13 @@ mod tests {
             game_directory_name: "Example".to_string(),
             server_name: "Example".to_string(),
             server_address: "play.example.com".to_string(),
+            launcher_profile_name: "Example".to_string(),
             launcher: LauncherKind::Official,
             profile: "balanced".to_string(),
             profile_label: "Balanced".to_string(),
             recommended_memory_mb: 4096,
             actions,
+            resources: vec![],
             required_mods: vec![],
             optional_mods: vec![],
             warnings: vec![],

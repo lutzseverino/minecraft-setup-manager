@@ -45,7 +45,6 @@ pub struct InstallPlanRequest {
     pub manifest_fingerprint: String,
     pub launcher: LauncherKind,
     pub profile: String,
-    pub server_address: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -67,6 +66,7 @@ pub struct SavedServerEntry {
     pub selected_profile: String,
     pub installed_manifest_version: Option<String>,
     pub installed_manifest_fingerprint: Option<String>,
+    pub needs_repair: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -107,14 +107,24 @@ pub struct InstallPlan {
     pub game_directory_name: String,
     pub server_name: String,
     pub server_address: String,
+    pub launcher_profile_name: String,
     pub launcher: LauncherKind,
     pub profile: String,
     pub profile_label: String,
     pub recommended_memory_mb: u32,
     pub actions: Vec<SetupActionPreview>,
+    pub resources: Vec<SetupResourcePreview>,
     pub required_mods: Vec<String>,
     pub optional_mods: Vec<String>,
     pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupResourcePreview {
+    pub id: String,
+    pub source: crate::manifest::schema::ManifestResourceSource,
+    pub hashes: crate::manifest::schema::ManifestResourceHashes,
 }
 
 #[derive(Debug, Clone, Serialize)]

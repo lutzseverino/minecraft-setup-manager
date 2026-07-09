@@ -21,7 +21,7 @@ pub fn download_to_path(
     path: &Path,
     max_bytes: u64,
     description: &str,
-) -> Result<(), String> {
+) -> Result<u64, String> {
     let response = get(url, description)?;
     let mut reader = response.take(max_bytes + 1);
     let mut file = fs::File::create(path).map_err(|error| {
@@ -44,7 +44,9 @@ pub fn download_to_path(
     file.flush().map_err(|error| {
         let _ = fs::remove_file(path);
         format!("Could not finish saving the {description}: {error}")
-    })
+    })?;
+
+    Ok(copied)
 }
 
 fn get(url: &str, description: &str) -> Result<Response, String> {

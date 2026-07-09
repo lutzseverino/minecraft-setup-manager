@@ -108,7 +108,10 @@ impl OfficialMinecraftLauncherAdapter {
             "lastVersionId".to_string(),
             Value::String(version_id.clone()),
         );
-        next_profile.insert("name".to_string(), Value::String(plan.server_name.clone()));
+        next_profile.insert(
+            "name".to_string(),
+            Value::String(plan.launcher_profile_name.clone()),
+        );
         next_profile.insert("type".to_string(), Value::String("custom".to_string()));
 
         let next_value = Value::Object(next_profile);
@@ -420,7 +423,7 @@ mod tests {
         );
         assert_eq!(
             written["profiles"]["example-server"]["name"],
-            "Example Server"
+            "Custom Launcher Profile"
         );
 
         let second_result = adapter
@@ -480,12 +483,14 @@ mod tests {
             game_directory_name: "Example Server".to_string(),
             server_name: "Example Server".to_string(),
             server_address: "play.example.com".to_string(),
+            launcher_profile_name: "Custom Launcher Profile".to_string(),
             launcher: LauncherKind::Official,
             profile: "balanced".to_string(),
             profile_label: "Balanced".to_string(),
             recommended_memory_mb: 4096,
             update_status: ServerUpdateStatus::NewSetup,
             actions: vec![],
+            resources: vec![],
             required_mods: vec![],
             optional_mods: vec![],
             warnings: vec![],

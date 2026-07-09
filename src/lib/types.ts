@@ -41,10 +41,25 @@ export type InstallPlanRequest = Readonly<{
   manifestFingerprint: string;
   launcher: LauncherKind;
   profile: PerformanceProfileId;
-  serverAddress: string;
 }>;
 
 export type ManifestLoaderKind = "none" | "fabric";
+
+export type ManifestResourceSource =
+  | Readonly<{
+      kind: "direct";
+      url: string;
+    }>
+  | Readonly<{
+      kind: "modrinth";
+      project: string;
+      version: string;
+    }>;
+
+export type ManifestResourceHashes = Readonly<{
+  sha256?: string | null;
+  sha512?: string | null;
+}>;
 
 export type SetupManifest = Readonly<{
   schemaVersion: number;
@@ -75,8 +90,8 @@ export type SetupManifest = Readonly<{
     required: boolean;
     profiles?: string[];
     fileName?: string | null;
-    source: Record<string, unknown>;
-    hashes?: Record<string, string>;
+    source: ManifestResourceSource;
+    hashes?: ManifestResourceHashes;
   }>;
   serverEntry?: {
     name: string;
@@ -95,6 +110,7 @@ export type SavedServerEntry = Readonly<{
   selectedProfile: PerformanceProfileId;
   installedManifestVersion: string | null;
   installedManifestFingerprint: string | null;
+  needsRepair: boolean;
 }>;
 
 export type ServerUpdateStatus =
@@ -122,11 +138,17 @@ export type InstallPlan = Readonly<{
   gameDirectoryName: string;
   serverName: string;
   serverAddress: string;
+  launcherProfileName: string;
   launcher: LauncherKind;
   profile: PerformanceProfileId;
   profileLabel: string;
   recommendedMemoryMb: number;
   actions: SetupActionPreview[];
+  resources: Array<{
+    id: string;
+    source: ManifestResourceSource;
+    hashes: ManifestResourceHashes;
+  }>;
   requiredMods: string[];
   optionalMods: string[];
   warnings: string[];

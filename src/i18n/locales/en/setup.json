@@ -137,6 +137,10 @@
       "shaderpacks": "shader packs",
       "config": "config files"
     },
+    "resourceSource": {
+      "direct": "From {{host}}. Checked with {{hash}} before it is used.",
+      "modrinth": "From Modrinth project {{project}}, version {{version}}. The download is checked before it is used."
+    },
     "actions": {
       "verify_loader": {
         "label": "Check Minecraft version",

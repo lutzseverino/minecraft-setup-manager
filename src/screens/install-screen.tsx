@@ -83,7 +83,7 @@ export function InstallScreen({
           <AppCardContent className="grid gap-2">
             {plan?.actions.map((action) => (
               <StatusRow
-                detail={actionDetail(action, t)}
+                detail={actionDetail(action, plan, t)}
                 key={action.id}
                 label={actionLabel(action, t)}
                 meta={t(actionMetaKey(action))}
@@ -132,9 +132,37 @@ function actionLabel(action: SetupActionPreview, t: TFunction) {
   });
 }
 
-function actionDetail(action: SetupActionPreview, t: TFunction) {
-  return t(`install.actions.${action.kind}.detail`, {
+function actionDetail(
+  action: SetupActionPreview,
+  plan: InstallPlan,
+  t: TFunction,
+) {
+  const detail = t(`install.actions.${action.kind}.detail`, {
     subject: action.subject,
     target: action.target ? t(`install.targets.${action.target}`) : undefined,
   });
+  const resource = plan.resources.find((item) => item.id === action.resourceId);
+
+  if (action.kind !== "sync_resource" || !resource) {
+    return detail;
+  }
+
+  if (resource.source.kind === "modrinth") {
+    return `${detail} ${t("install.resourceSource.modrinth", {
+      project: resource.source.project,
+      version: resource.source.version,
+    })}`;
+  }
+
+  return `${detail} ${t("install.resourceSource.direct", {
+    hash: hashLabel(resource.hashes),
+    host: new URL(resource.source.url).host,
+  })}`;
+}
+
+function hashLabel(hashes: InstallPlan["resources"][number]["hashes"]) {
+  const hash = hashes.sha512 ?? hashes.sha256;
+  const algorithm = hashes.sha512 ? "SHA-512" : "SHA-256";
+
+  return hash ? `${algorithm} ${hash.slice(0, 12)}...` : algorithm;
 }
