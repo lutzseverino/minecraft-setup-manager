@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Linux desktop dependencies
         if: runner.os == 'Linux'
@@ -36,10 +36,13 @@ jobs:
           sudo apt-get install --yes libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           cache: npm
           node-version: 22
+
+      - name: Install pinned npm
+        run: npm install --global npm@11.6.2
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
