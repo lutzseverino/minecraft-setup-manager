@@ -32,19 +32,24 @@ export function InstallScreen({
   plan,
 }: InstallScreenProps) {
   const { t } = useTranslation();
-  const log = installProgress?.log ?? [
-    t("install.emptyLog"),
-  ];
+  const log = installProgress?.log ?? [t("install.emptyLog")];
+  const unsupportedActions =
+    plan?.actions.filter((action) => action.status === "not_implemented") ?? [];
+  const installSucceeded = installProgress?.phase === "complete";
 
   return (
     <ScreenShell
       actions={
         <>
-          <AppButton onClick={onInstall} variant="outline">
+          <AppButton
+            disabled={!plan || unsupportedActions.length > 0}
+            onClick={onInstall}
+            variant="outline"
+          >
             <PlayIcon data-icon="inline-start" />
             {t("install.run")}
           </AppButton>
-          <AppButton disabled={!installProgress} onClick={onContinue}>
+          <AppButton disabled={!installSucceeded} onClick={onContinue}>
             {t("install.check")}
           </AppButton>
         </>
@@ -54,6 +59,13 @@ export function InstallScreen({
       title={t("install.title")}
     >
       <div className="grid gap-4">
+        {unsupportedActions.length > 0 ? (
+          <StatusRow
+            detail={t("install.unsupported.detail")}
+            label={t("install.unsupported.label")}
+            tone="warning"
+          />
+        ) : null}
         <AppCard>
           <AppCardHeader>
             <AppCardTitle className="flex items-center gap-2 text-sm">
@@ -68,7 +80,7 @@ export function InstallScreen({
                 key={action.id}
                 label={actionLabel(action, t)}
                 meta={t(actionMetaKey(action))}
-                tone={actionTone(action, Boolean(installProgress))}
+                tone={actionTone(action, installSucceeded)}
               />
             ))}
           </AppCardContent>

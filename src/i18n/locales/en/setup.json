@@ -108,12 +108,16 @@
     "cardTitle": "Setup steps",
     "emptyLog": "[waiting] Ready to create the local setup.",
     "failedLog": "[problem] {{message}}",
+    "unsupported": {
+      "label": "This setup needs a newer app",
+      "detail": "Some requested steps are not available yet. Nothing will be changed until every step can be completed safely."
+    },
     "actionStatus": {
       "add": "Add",
       "update": "Update",
       "remove": "Remove",
       "verify": "Check",
-      "notImplemented": "Planned"
+      "notImplemented": "Not available yet"
     },
     "targets": {
       "mods": "mods",

@@ -108,12 +108,16 @@
     "cardTitle": "Pasos",
     "emptyLog": "[esperando] Listo para crear la configuracion local.",
     "failedLog": "[problema] {{message}}",
+    "unsupported": {
+      "label": "Esta configuracion necesita una app mas nueva",
+      "detail": "Algunos pasos todavia no estan disponibles. No se cambiara nada hasta que todos los pasos se puedan completar de forma segura."
+    },
     "actionStatus": {
       "add": "Anadir",
       "update": "Actualizar",
       "remove": "Quitar",
       "verify": "Revisar",
-      "notImplemented": "Planeado"
+      "notImplemented": "Todavia no disponible"
     },
     "targets": {
       "mods": "mods",

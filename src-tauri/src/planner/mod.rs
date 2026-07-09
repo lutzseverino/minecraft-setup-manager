@@ -11,6 +11,29 @@ use crate::minecraft::managed_resources::{
     can_sync_resource, managed_file_name, setup_action_target,
 };
 
+pub fn ensure_plan_is_supported(plan: &crate::commands::InstallPlan) -> Result<(), String> {
+    let unsupported = plan
+        .actions
+        .iter()
+        .filter(|action| matches!(action.status, SetupActionStatus::NotImplemented))
+        .map(|action| {
+            action
+                .subject
+                .clone()
+                .unwrap_or_else(|| action.id.replace('_', " "))
+        })
+        .collect::<Vec<_>>();
+
+    if unsupported.is_empty() {
+        return Ok(());
+    }
+
+    Err(format!(
+        "This version of the app cannot finish these setup steps yet: {}.",
+        unsupported.join(", ")
+    ))
+}
+
 pub fn build_action_previews(
     manifest: &SetupManifest,
     request: &InstallPlanRequest,
@@ -260,6 +283,44 @@ mod tests {
     };
 
     #[test]
+    fn unsupported_actions_block_the_plan_before_installation() {
+        let mut plan = install_plan(vec![]);
+        plan.actions = vec![SetupActionPreview {
+            id: "fabric_install".to_string(),
+            kind: SetupActionKind::InstallLoader,
+            intent: SetupActionIntent::Add,
+            status: SetupActionStatus::NotImplemented,
+            required: true,
+            resource_id: None,
+            subject: Some("Fabric".to_string()),
+            target: None,
+            file_name: None,
+        }];
+
+        let error = ensure_plan_is_supported(&plan).expect_err("unsupported plan must fail");
+
+        assert!(error.contains("Fabric"));
+    }
+
+    #[test]
+    fn fully_supported_actions_allow_the_plan() {
+        let mut plan = install_plan(vec![]);
+        plan.actions = vec![SetupActionPreview {
+            id: "game_directory".to_string(),
+            kind: SetupActionKind::EnsureGameDirectory,
+            intent: SetupActionIntent::Add,
+            status: SetupActionStatus::Ready,
+            required: true,
+            resource_id: None,
+            subject: Some("Example".to_string()),
+            target: None,
+            file_name: None,
+        }];
+
+        assert!(ensure_plan_is_supported(&plan).is_ok());
+    }
+
+    #[test]
     fn resource_actions_mark_matching_installed_resources_as_verify() {
         let manifest = manifest_with_resource(resource(
             "fabric-api",
@@ -402,6 +463,24 @@ mod tests {
             launcher: LauncherKind::Official,
             profile: PerformanceProfileId::Balanced,
             server_address: "play.example.com".to_string(),
+        }
+    }
+
+    fn install_plan(actions: Vec<SetupActionPreview>) -> crate::commands::InstallPlan {
+        crate::commands::InstallPlan {
+            server_id: "example".to_string(),
+            update_status: ServerUpdateStatus::NewSetup,
+            minecraft_version: "1.21.6".to_string(),
+            fabric_loader_version: "0.16.14".to_string(),
+            game_directory_name: "Example".to_string(),
+            server_name: "Example".to_string(),
+            server_address: "play.example.com".to_string(),
+            launcher: LauncherKind::Official,
+            profile: PerformanceProfileId::Balanced,
+            actions,
+            required_mods: vec![],
+            optional_mods: vec![],
+            warnings: vec![],
         }
     }
 
