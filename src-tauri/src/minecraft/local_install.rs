@@ -4,9 +4,8 @@ use std::path::PathBuf;
 use serde::Serialize;
 
 use crate::commands::InstallPlan;
-use crate::system::paths;
+use crate::system::{paths, APP_SUPPORT_NAME};
 
-const APP_SUPPORT_NAME: &str = "Minecraft Setup Manager";
 const RECEIPT_FILE_NAME: &str = "minecraft-setup-manager.json";
 
 #[derive(Debug, Clone)]

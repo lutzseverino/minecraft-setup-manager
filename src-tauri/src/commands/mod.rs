@@ -6,11 +6,44 @@ use crate::launcher;
 use crate::manifest;
 use crate::minecraft;
 use crate::performance_profiles;
+use crate::server;
 use crate::setup;
 
 #[tauri::command]
 pub fn detect_launchers() -> Vec<LauncherDetection> {
     launcher::detect_launchers()
+}
+
+#[tauri::command]
+pub fn list_saved_servers() -> Result<Vec<SavedServerEntry>, String> {
+    crate::app_state::list_saved_servers()
+}
+
+#[tauri::command]
+pub fn resolve_server_manifest(
+    request: ResolveServerManifestRequest,
+) -> Result<ResolvedServerManifest, String> {
+    let (address, manifest_url) = server::discovery::manifest_url_for_address(&request.address)?;
+    let manifest = manifest::fetch::fetch_manifest(&manifest_url)?;
+    let manifest_fingerprint = manifest::fingerprint::manifest_fingerprint(&manifest)?;
+    let server = crate::app_state::upsert_checked_server(
+        &address,
+        &manifest_url,
+        &manifest,
+        &manifest_fingerprint,
+    )?;
+    let update_status = match &server.installed_manifest_version {
+        Some(version) if version == &manifest.manifest_version => ServerUpdateStatus::UpToDate,
+        Some(_) => ServerUpdateStatus::UpdateAvailable,
+        None => ServerUpdateStatus::NewSetup,
+    };
+
+    Ok(ResolvedServerManifest {
+        server,
+        manifest,
+        manifest_fingerprint,
+        update_status,
+    })
 }
 
 #[tauri::command]

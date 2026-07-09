@@ -1,3 +1,7 @@
+pub mod fetch;
+pub mod fingerprint;
+pub mod schema;
+
 use crate::commands::{InstallPlan, InstallPlanRequest, PerformanceProfileId};
 use crate::performance_profiles::PerformanceProfile;
 

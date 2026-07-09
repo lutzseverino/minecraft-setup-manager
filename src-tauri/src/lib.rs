@@ -1,8 +1,10 @@
+mod app_state;
 mod commands;
 mod launcher;
 mod manifest;
 mod minecraft;
 mod performance_profiles;
+mod server;
 mod setup;
 mod system;
 
@@ -12,6 +14,8 @@ pub fn run() {
             commands::detect_launchers,
             commands::export_diagnostics,
             commands::get_install_plan,
+            commands::list_saved_servers,
+            commands::resolve_server_manifest,
             commands::start_install,
             commands::validate_installation,
         ])
