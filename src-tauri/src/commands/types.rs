@@ -131,6 +131,7 @@ pub struct SetupActionPreview {
     pub resource_id: Option<String>,
     pub subject: Option<String>,
     pub target: Option<SetupActionTarget>,
+    pub file_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -156,7 +157,7 @@ pub enum SetupActionIntent {
     Verify,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SetupActionStatus {
     Ready,

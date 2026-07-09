@@ -77,6 +77,7 @@ export type SetupManifest = Readonly<{
     resourceType: "mod" | "resource_pack" | "shader_pack" | "config";
     target: "mods" | "resourcepacks" | "shaderpacks" | "config";
     required: boolean;
+    fileName?: string | null;
     source: Record<string, unknown>;
     hashes?: Record<string, string>;
   }>;
@@ -161,6 +162,7 @@ export type SetupActionPreview = Readonly<{
   resourceId: string | null;
   subject: string | null;
   target: SetupActionTarget | null;
+  fileName: string | null;
 }>;
 
 export type StartInstallRequest = InstallPlanRequest;

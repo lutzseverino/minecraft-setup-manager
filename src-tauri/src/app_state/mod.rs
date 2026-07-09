@@ -53,6 +53,7 @@ struct InstalledResourceRecord {
     id: String,
     name: String,
     target: ManifestResourceTarget,
+    file_name: Option<String>,
     source: ManifestResourceSource,
     hashes: ManifestResourceHashes,
 }
@@ -67,6 +68,7 @@ pub struct InstalledResourceSnapshot {
     pub id: String,
     pub name: String,
     pub target: ManifestResourceTarget,
+    pub file_name: Option<String>,
     pub source: ManifestResourceSource,
     pub hashes: ManifestResourceHashes,
 }
@@ -125,6 +127,7 @@ impl From<InstalledResourceRecord> for InstalledResourceSnapshot {
             id: record.id,
             name: record.name,
             target: record.target,
+            file_name: record.file_name,
             source: record.source,
             hashes: record.hashes,
         }
@@ -269,6 +272,7 @@ fn installed_resource_records(
             id: resource.id.clone(),
             name: resource.name.clone(),
             target: resource.target.clone(),
+            file_name: crate::minecraft::managed_resources::managed_file_name(resource),
             source: resource.source.clone(),
             hashes: resource.hashes.clone(),
         })

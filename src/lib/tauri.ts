@@ -64,6 +64,7 @@ const demoManifest = {
       resourceType: "mod",
       target: "mods",
       required: true,
+      fileName: "fabric-api.jar",
       source: { kind: "modrinth", project: "fabric-api", version: "demo" },
       hashes: {},
     },
@@ -159,6 +160,7 @@ export async function getInstallPlan(request: InstallPlanRequest) {
           resourceId: null,
           subject: demoManifest.minecraft.loader.version ?? null,
           target: null,
+          fileName: null,
         },
         {
           id: "fabric_install",
@@ -169,6 +171,7 @@ export async function getInstallPlan(request: InstallPlanRequest) {
           resourceId: null,
           subject: demoManifest.minecraft.version,
           target: null,
+          fileName: null,
         },
         {
           id: "game_directory",
@@ -179,6 +182,7 @@ export async function getInstallPlan(request: InstallPlanRequest) {
           resourceId: null,
           subject: demoManifest.install.gameDirectoryName,
           target: null,
+          fileName: null,
         },
         {
           id: "launcher_profile",
@@ -189,6 +193,7 @@ export async function getInstallPlan(request: InstallPlanRequest) {
           resourceId: null,
           subject: demoManifest.install.launcherProfileName,
           target: null,
+          fileName: null,
         },
         ...demoManifest.resources.map((resource) => ({
           id: `resource_${resource.id}`,
@@ -199,6 +204,7 @@ export async function getInstallPlan(request: InstallPlanRequest) {
           resourceId: resource.id,
           subject: resource.name,
           target: resource.target,
+          fileName: resource.fileName ?? null,
         })),
         {
           id: "setup_receipt",
@@ -209,6 +215,7 @@ export async function getInstallPlan(request: InstallPlanRequest) {
           resourceId: null,
           subject: null,
           target: null,
+          fileName: null,
         },
         {
           id: "validation",
@@ -219,6 +226,7 @@ export async function getInstallPlan(request: InstallPlanRequest) {
           resourceId: null,
           subject: null,
           target: null,
+          fileName: null,
         },
       ],
       requiredMods: demoManifest.resources

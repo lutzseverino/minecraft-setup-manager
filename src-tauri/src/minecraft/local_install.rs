@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use serde::Serialize;
 
 use crate::commands::InstallPlan;
+use crate::minecraft::managed_resources::{self, ManagedResourceAction};
 use crate::system::{paths, APP_SUPPORT_NAME};
 
 const RECEIPT_FILE_NAME: &str = "minecraft-setup-manager.json";
@@ -71,6 +72,8 @@ pub fn prepare_local_install(plan: &InstallPlan) -> Result<LocalInstallResult, S
         )
     })?;
 
+    let resource_results = managed_resources::apply_plan_resource_actions(plan, &game_dir)?;
+
     let receipt_path = game_dir.join(RECEIPT_FILE_NAME);
     let receipt = SetupReceipt {
         server_id: &plan.server_id,
@@ -93,14 +96,38 @@ pub fn prepare_local_install(plan: &InstallPlan) -> Result<LocalInstallResult, S
         )
     })?;
 
+    let mut log = vec![
+        "Created the separate game folder.".to_string(),
+        "Created the mods, resource packs, shader packs, and config folders.".to_string(),
+        "Saved a setup receipt in the game folder.".to_string(),
+    ];
+    log.extend(
+        resource_results
+            .into_iter()
+            .map(|result| match result.action {
+                ManagedResourceAction::Removed => format!(
+                    "Removed managed resource {} at {}.",
+                    result.resource_id,
+                    result
+                        .path
+                        .map(|path| path.display().to_string())
+                        .unwrap_or_else(|| "unknown path".to_string())
+                ),
+                ManagedResourceAction::Missing => format!(
+                    "Managed resource {} was already absent.",
+                    result.resource_id
+                ),
+                ManagedResourceAction::SkippedNoFileName => format!(
+                    "Skipped removing managed resource {} because no managed file name is known.",
+                    result.resource_id
+                ),
+            }),
+    );
+
     Ok(LocalInstallResult {
         game_dir,
         receipt_path,
-        log: vec![
-            "Created the separate game folder.".to_string(),
-            "Created the mods, resource packs, shader packs, and config folders.".to_string(),
-            "Saved a setup receipt in the game folder.".to_string(),
-        ],
+        log,
     })
 }
 

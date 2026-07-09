@@ -71,6 +71,7 @@ pub struct ManifestResource {
     pub target: ManifestResourceTarget,
     #[serde(default)]
     pub required: bool,
+    pub file_name: Option<String>,
     pub source: ManifestResourceSource,
     #[serde(default)]
     pub hashes: ManifestResourceHashes,

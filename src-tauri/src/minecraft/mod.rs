@@ -1,5 +1,6 @@
 pub mod fabric_installer;
 pub mod local_install;
+pub mod managed_resources;
 pub mod modrinth;
 pub mod servers_dat;
 pub mod validation;

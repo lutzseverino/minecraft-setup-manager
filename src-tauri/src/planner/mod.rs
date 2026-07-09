@@ -3,12 +3,11 @@ use std::collections::{HashMap, HashSet};
 use crate::app_state::{InstalledResourceSnapshot, InstalledServerSnapshot};
 use crate::commands::{
     InstallPlanRequest, LauncherKind, PerformanceProfileId, ServerUpdateStatus, SetupActionIntent,
-    SetupActionKind, SetupActionPreview, SetupActionStatus, SetupActionTarget,
+    SetupActionKind, SetupActionPreview, SetupActionStatus,
 };
-use crate::manifest::schema::{
-    ManifestLoaderKind, ManifestResource, ManifestResourceTarget, SetupManifest,
-};
+use crate::manifest::schema::{ManifestLoaderKind, ManifestResource, SetupManifest};
 use crate::manifest::selected_resources;
+use crate::minecraft::managed_resources::{managed_file_name, setup_action_target};
 
 pub fn build_action_previews(
     manifest: &SetupManifest,
@@ -29,6 +28,7 @@ pub fn build_action_previews(
         resource_id: None,
         subject: Some(manifest.install.game_directory_name.clone()),
         target: None,
+        file_name: None,
     });
     actions.push(SetupActionPreview {
         id: "launcher_profile".to_string(),
@@ -39,6 +39,7 @@ pub fn build_action_previews(
         resource_id: None,
         subject: Some(manifest.install.launcher_profile_name.clone()),
         target: None,
+        file_name: None,
     });
 
     actions.extend(resource_actions(manifest, request.profile, installed));
@@ -53,6 +54,7 @@ pub fn build_action_previews(
             resource_id: None,
             subject: Some(server_entry.name.clone()),
             target: None,
+            file_name: None,
         });
     }
 
@@ -65,6 +67,7 @@ pub fn build_action_previews(
         resource_id: None,
         subject: None,
         target: None,
+        file_name: None,
     });
     actions.push(SetupActionPreview {
         id: "validation".to_string(),
@@ -75,6 +78,7 @@ pub fn build_action_previews(
         resource_id: None,
         subject: None,
         target: None,
+        file_name: None,
     });
 
     actions
@@ -94,6 +98,7 @@ fn loader_actions(
             resource_id: None,
             subject: Some(manifest.minecraft.version.clone()),
             target: None,
+            file_name: None,
         }],
         ManifestLoaderKind::Fabric => {
             let version = manifest
@@ -113,6 +118,7 @@ fn loader_actions(
                     resource_id: None,
                     subject: Some(version),
                     target: None,
+                    file_name: None,
                 },
                 SetupActionPreview {
                     id: "fabric_install".to_string(),
@@ -123,6 +129,7 @@ fn loader_actions(
                     resource_id: None,
                     subject: Some(manifest.minecraft.version.clone()),
                     target: None,
+                    file_name: None,
                 },
             ]
         }
@@ -154,6 +161,7 @@ fn resource_actions(
                 resource_id: Some(resource.id.clone()),
                 subject: Some(resource.name.clone()),
                 target: Some(setup_action_target(resource.target.clone())),
+                file_name: managed_file_name(resource),
             }
         })
         .collect::<Vec<_>>();
@@ -164,15 +172,24 @@ fn resource_actions(
                 .resources
                 .iter()
                 .filter(|resource| !selected_resource_ids.contains(resource.id.as_str()))
-                .map(|resource| SetupActionPreview {
-                    id: format!("remove_resource_{}", resource.id),
-                    kind: SetupActionKind::RemoveResource,
-                    intent: SetupActionIntent::Remove,
-                    status: SetupActionStatus::NotImplemented,
-                    required: false,
-                    resource_id: Some(resource.id.clone()),
-                    subject: Some(resource.name.clone()),
-                    target: Some(setup_action_target(resource.target.clone())),
+                .map(|resource| {
+                    let file_name = resource.file_name.clone();
+
+                    SetupActionPreview {
+                        id: format!("remove_resource_{}", resource.id),
+                        kind: SetupActionKind::RemoveResource,
+                        intent: SetupActionIntent::Remove,
+                        status: if file_name.is_some() {
+                            SetupActionStatus::Ready
+                        } else {
+                            SetupActionStatus::NotImplemented
+                        },
+                        required: false,
+                        resource_id: Some(resource.id.clone()),
+                        subject: Some(resource.name.clone()),
+                        target: Some(setup_action_target(resource.target.clone())),
+                        file_name,
+                    }
                 }),
         );
     }
@@ -208,15 +225,6 @@ fn resource_intent(
             SetupActionIntent::Verify
         }
         Some(_) => SetupActionIntent::Update,
-    }
-}
-
-fn setup_action_target(target: ManifestResourceTarget) -> SetupActionTarget {
-    match target {
-        ManifestResourceTarget::Mods => SetupActionTarget::Mods,
-        ManifestResourceTarget::Resourcepacks => SetupActionTarget::Resourcepacks,
-        ManifestResourceTarget::Shaderpacks => SetupActionTarget::Shaderpacks,
-        ManifestResourceTarget::Config => SetupActionTarget::Config,
     }
 }
 
@@ -360,8 +368,16 @@ mod tests {
         );
 
         assert_eq!(
-            Some((SetupActionKind::RemoveResource, SetupActionIntent::Remove)),
-            resource_action(&actions, "old-map").map(|action| (action.kind, action.intent))
+            Some((
+                SetupActionKind::RemoveResource,
+                SetupActionIntent::Remove,
+                SetupActionStatus::Ready
+            )),
+            resource_action(&actions, "old-map").map(|action| (
+                action.kind,
+                action.intent,
+                action.status
+            ))
         );
     }
 
@@ -421,6 +437,7 @@ mod tests {
             resource_type: ManifestResourceType::Mod,
             target: ManifestResourceTarget::Mods,
             required: true,
+            file_name: Some(format!("{id}.jar")),
             source,
             hashes,
         }
@@ -439,6 +456,7 @@ mod tests {
             id: id.to_string(),
             name: id.to_string(),
             target: ManifestResourceTarget::Mods,
+            file_name: Some(format!("{id}.jar")),
             source,
             hashes,
         }
