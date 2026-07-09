@@ -1,0 +1,251 @@
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { AppTooltipProvider } from "@/components/app/app-tooltip";
+import { Stepper, StepperStep } from "@/components/app/stepper";
+import { defaultServer } from "@/config/server-catalog";
+import {
+  fallbackDetections,
+  performanceProfiles,
+  wizardSteps,
+} from "@/config/setup-options";
+import "@/i18n";
+import {
+  detectLaunchers,
+  exportDiagnostics,
+  getInstallPlan,
+  startInstall,
+  validateInstallation,
+} from "@/lib/tauri";
+import type {
+  DiagnosticBundle,
+  InstallPlan,
+  InstallProgress,
+  LauncherDetection,
+  LauncherKind,
+  PerformanceProfileId,
+  ValidationResult,
+  WizardStepId,
+} from "@/lib/types";
+import { DiagnosticsScreen } from "@/screens/diagnostics-screen";
+import { DoneScreen } from "@/screens/done-screen";
+import { InstallScreen } from "@/screens/install-screen";
+import { LauncherScreen } from "@/screens/launcher-screen";
+import { ProfileScreen } from "@/screens/profile-screen";
+import { WelcomeScreen } from "@/screens/welcome-screen";
+
+function stepIndex(step: WizardStepId) {
+  return wizardSteps.findIndex((item) => item.id === step);
+}
+
+export default function App() {
+  const { t } = useTranslation();
+  const [step, setStep] = useState<WizardStepId>("welcome");
+  const [detections, setDetections] =
+    useState<LauncherDetection[]>(fallbackDetections);
+  const [launcher, setLauncher] = useState<LauncherKind>("official");
+  const [profile, setProfile] = useState<PerformanceProfileId>("balanced");
+  const [serverAddress, setServerAddress] = useState(
+    defaultServer.defaultAddress,
+  );
+  const [plan, setPlan] = useState<InstallPlan | null>(null);
+  const [installProgress, setInstallProgress] = useState<InstallProgress | null>(
+    null,
+  );
+  const [validationResult, setValidationResult] =
+    useState<ValidationResult | null>(null);
+  const [diagnostics, setDiagnostics] = useState<DiagnosticBundle | null>(null);
+
+  const currentStepIndex = stepIndex(step);
+  const installRequest = useMemo(
+    () => ({
+      serverId: defaultServer.id,
+      launcher,
+      profile,
+      serverAddress: serverAddress || defaultServer.defaultAddress,
+    }),
+    [launcher, profile, serverAddress],
+  );
+
+  async function refreshDetections() {
+    const nextDetections = await detectLaunchers();
+    setDetections(nextDetections);
+    setLauncher((current) => {
+      const keepsCurrent = nextDetections.some(
+        (item) => item.kind === current && item.status !== "not_found",
+      );
+      if (keepsCurrent) {
+        return current;
+      }
+
+      const detected = nextDetections.find((item) => item.status === "detected");
+      if (detected) {
+        return detected.kind;
+      }
+
+      const selectable = nextDetections.find(
+        (item) => item.status !== "not_found",
+      );
+      return selectable ? selectable.kind : current;
+    });
+  }
+
+  useEffect(() => {
+    if (step === "launcher") {
+      void refreshDetections();
+    }
+  }, [step]);
+
+  async function buildPlan() {
+    const nextPlan = await getInstallPlan(installRequest);
+    setPlan(nextPlan);
+    setStep("install");
+  }
+
+  async function runInstall() {
+    try {
+      const progress = await startInstall(installRequest);
+      setInstallProgress(progress);
+      setPlan(progress.plan);
+    } catch (error) {
+      const fallbackPlan = plan ?? (await getInstallPlan(installRequest));
+      setInstallProgress({
+        phase: "failed",
+        percent: 0,
+        plan: fallbackPlan,
+        log: [
+          t("install.failedLog", {
+            message: error instanceof Error ? error.message : String(error),
+          }),
+        ],
+      });
+      setPlan(fallbackPlan);
+    }
+  }
+
+  async function runValidation() {
+    try {
+      const result = await validateInstallation(installRequest);
+      setValidationResult(result);
+      setStep("validate");
+    } catch (error) {
+      setValidationResult({
+        overall: "fail",
+        checks: [
+          {
+            id: "local_setup",
+            label: t("diagnostics.checks.local_setup.label"),
+            detail: t("diagnostics.checks.local_setup.detail", {
+              message: error instanceof Error ? error.message : String(error),
+            }),
+            status: "fail",
+          },
+        ],
+      });
+      setStep("validate");
+    }
+  }
+
+  async function handleExportDiagnostics() {
+    try {
+      setDiagnostics(await exportDiagnostics());
+    } catch (error) {
+      setDiagnostics({
+        path: "",
+        summary: t("done.reportFailed", {
+          message: error instanceof Error ? error.message : String(error),
+        }),
+      });
+    }
+  }
+
+  function restart() {
+    setStep("welcome");
+    setPlan(null);
+    setInstallProgress(null);
+    setValidationResult(null);
+    setDiagnostics(null);
+  }
+
+  return (
+    <AppTooltipProvider>
+      <div className="min-h-screen">
+        <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
+          <header className="border-b-2 border-b-[var(--bevel-line)] pb-6">
+            <Stepper aria-label={t("steps.ariaLabel")}>
+              {wizardSteps.map((item, index) => (
+                <StepperStep
+                  disabled={index > currentStepIndex}
+                  key={item.id}
+                  label={t(item.labelKey)}
+                  number={index + 1}
+                  onClick={() => {
+                    if (index <= currentStepIndex) {
+                      setStep(item.id);
+                    }
+                  }}
+                  state={
+                    index < currentStepIndex
+                      ? "complete"
+                      : index === currentStepIndex
+                        ? "current"
+                        : "upcoming"
+                  }
+                />
+              ))}
+            </Stepper>
+          </header>
+
+          {step === "welcome" ? (
+            <WelcomeScreen
+              onContinue={() => setStep("launcher")}
+              server={defaultServer}
+            />
+          ) : null}
+          {step === "launcher" ? (
+            <LauncherScreen
+              detections={detections}
+              launcher={launcher}
+              onContinue={() => setStep("profile")}
+              onRefresh={refreshDetections}
+              onSelect={setLauncher}
+            />
+          ) : null}
+          {step === "profile" ? (
+            <ProfileScreen
+              onContinue={buildPlan}
+              onProfileChange={setProfile}
+              onServerAddressChange={setServerAddress}
+              profile={profile}
+              profiles={performanceProfiles}
+              server={defaultServer}
+              serverAddress={serverAddress}
+            />
+          ) : null}
+          {step === "install" ? (
+            <InstallScreen
+              installProgress={installProgress}
+              onContinue={runValidation}
+              onInstall={runInstall}
+              plan={plan}
+            />
+          ) : null}
+          {step === "validate" ? (
+            <DiagnosticsScreen
+              onContinue={() => setStep("done")}
+              result={validationResult}
+            />
+          ) : null}
+          {step === "done" ? (
+            <DoneScreen
+              diagnostics={diagnostics}
+              onExportDiagnostics={handleExportDiagnostics}
+              onRestart={restart}
+              plan={plan}
+            />
+          ) : null}
+        </main>
+      </div>
+    </AppTooltipProvider>
+  );
+}

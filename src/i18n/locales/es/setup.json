@@ -1,0 +1,196 @@
+{
+  "app": {
+    "title": "Configurador de Maresme MC",
+    "subtitle": "Prepara Minecraft para el servidor."
+  },
+  "common": {
+    "continue": "Continuar",
+    "done": "Hecho"
+  },
+  "status": {
+    "pending": "En espera",
+    "working": "Trabajando",
+    "ready": "Listo",
+    "review": "Revisar",
+    "blocked": "Problema",
+    "info": "Info"
+  },
+  "steps": {
+    "ariaLabel": "Progreso de la configuracion",
+    "welcome": "Inicio",
+    "launcher": "Launcher",
+    "profile": "Rendimiento",
+    "install": "Pasos",
+    "validate": "Revisar",
+    "done": "Hecho"
+  },
+  "launchers": {
+    "official": {
+      "label": "Minecraft Launcher",
+      "detail": "La mejor opcion si usas la app normal de Minecraft."
+    },
+    "sklauncher": {
+      "label": "SKlauncher",
+      "detail": "Usa esto si juegas con SKlauncher."
+    },
+    "manual": {
+      "label": "Manual",
+      "detail": "Usa esto si tu launcher es distinto."
+    }
+  },
+  "profiles": {
+    "lowEnd": {
+      "label": "PC sencillo",
+      "detail": "Para portatiles antiguos o graficos justos."
+    },
+    "balanced": {
+      "label": "Recomendado",
+      "detail": "Buena opcion para casi todos."
+    },
+    "shaders": {
+      "label": "Shaders",
+      "detail": "Para PCs potentes con mejor iluminacion."
+    }
+  },
+  "welcome": {
+    "eyebrow": "Configuracion",
+    "title": "Prepara Minecraft para {{server}}.",
+    "lead": "Esto crea una carpeta limpia de Minecraft solo para {{server}}. Guarda alli el archivo de configuracion, asi tus mundos y otros mods se quedan aparte.",
+    "start": "Empezar",
+    "status": {
+      "folder": {
+        "label": "Carpeta separada",
+        "detail": "{{server}} usa su propia carpeta de juego."
+      },
+      "launcher": {
+        "label": "Funciona con tu launcher",
+        "detail": "Elige Minecraft Launcher, SKlauncher o configuracion manual."
+      },
+      "local": {
+        "label": "Configuracion local",
+        "detail": "Esta app crea la carpeta de juego en tu ordenador."
+      }
+    },
+    "highlights": {
+      "title": "Lo que deja listo",
+      "folder": {
+        "label": "Carpeta limpia",
+        "detail": "Una carpeta nueva para {{server}}."
+      },
+      "launcher": {
+        "label": "Tu launcher",
+        "detail": "Un perfil del launcher para esta configuracion."
+      },
+      "check": {
+        "label": "Revision final",
+        "detail": "Una revision de los archivos locales."
+      }
+    }
+  },
+  "launcher": {
+    "eyebrow": "Launcher",
+    "title": "Elige tu launcher.",
+    "lead": "Elige la app con la que abres Minecraft. Si no la encontramos, puedes usar el modo manual.",
+    "scanAgain": "Buscar otra vez",
+    "cardTitle": "Launchers",
+    "unavailable": "No se ha encontrado en este ordenador.",
+    "status": {
+      "found": "Encontrado",
+      "notFound": "No encontrado",
+      "always": "Siempre disponible",
+      "scanning": "Buscando"
+    }
+  },
+  "profile": {
+    "eyebrow": "Rendimiento",
+    "title": "Elige como debe ir Minecraft.",
+    "lead": "Elige la opcion que encaje con tu ordenador. El archivo de configuracion guarda la lista correcta de mods.",
+    "continue": "Ver pasos",
+    "memory": "{{memory}} MB RAM",
+    "serverCardTitle": "Direccion del servidor",
+    "serverAddress": "Direccion",
+    "serverHelp": "Dejalo asi salvo que {{server}} te de otra direccion."
+  },
+  "install": {
+    "eyebrow": "Pasos",
+    "title": "Revisa los pasos.",
+    "lead": "Esto revisa Fabric, crea una carpeta limpia y anade un perfil del launcher.",
+    "run": "Configurar",
+    "check": "Revisar",
+    "cardTitle": "Pasos",
+    "emptyLog": "[esperando] Listo para crear la configuracion local.",
+    "failedLog": "[problema] {{message}}",
+    "steps": {
+      "fabric_version": {
+        "label": "Revisar Fabric"
+      },
+      "game_directory": {
+        "label": "Crear una carpeta separada",
+        "detail": "La app crea esta carpeta y guarda alli el archivo de configuracion."
+      },
+      "launcher_profile": {
+        "label": "Anadir el perfil del launcher"
+      },
+      "mods_directory": {
+        "label": "Crear la carpeta de mods"
+      },
+      "setup_receipt": {
+        "label": "Guardar el archivo de configuracion"
+      },
+      "validation": {
+        "label": "Revisarlo todo"
+      }
+    }
+  },
+  "progressLog": {
+    "title": "Registro"
+  },
+  "diagnostics": {
+    "eyebrow": "Revision",
+    "title": "Revisa la configuracion.",
+    "lead": "Estas revisiones miran los archivos locales de configuracion.",
+    "checks": {
+      "local_setup": {
+        "label": "Configuracion local",
+        "detail": "No se pudo revisar la configuracion: {{message}}"
+      },
+      "manifest": {
+        "label": "Lista cargada",
+        "detail": "Minecraft, Fabric, servidor y mods estan preparados."
+      },
+      "fabric_version": {
+        "label": "Version de Fabric",
+        "detail": "La version de Fabric esta instalada."
+      },
+      "game_directory": {
+        "label": "Carpeta separada",
+        "detail": "La carpeta de juego esta lista."
+      },
+      "launcher_profile": {
+        "label": "Perfil del launcher",
+        "detail": "El perfil del launcher esta listo."
+      },
+      "mods_directory": {
+        "label": "Carpeta de mods",
+        "detail": "La carpeta de mods esta lista."
+      },
+      "setup_receipt": {
+        "label": "Archivo de configuracion",
+        "detail": "El archivo de configuracion esta guardado."
+      }
+    }
+  },
+  "done": {
+    "eyebrow": "Hecho",
+    "title": "La configuracion local esta lista.",
+    "lead": "La carpeta limpia y el archivo de configuracion estan listos en este ordenador.",
+    "export": "Exportar informe",
+    "startOver": "Empezar de nuevo",
+    "summary": {
+      "label": "Flujo completado",
+      "detail": "Opcion: {{profile}} · Launcher: {{launcher}}"
+    },
+    "reportTitle": "Informe",
+    "reportFailed": "No se pudo exportar el informe: {{message}}"
+  }
+}

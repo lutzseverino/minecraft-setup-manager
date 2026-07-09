@@ -1,0 +1,196 @@
+{
+  "app": {
+    "title": "Maresme MC Setup",
+    "subtitle": "Gets Minecraft ready for the server."
+  },
+  "common": {
+    "continue": "Continue",
+    "done": "Done"
+  },
+  "status": {
+    "pending": "Waiting",
+    "working": "Working",
+    "ready": "Ready",
+    "review": "Check",
+    "blocked": "Problem",
+    "info": "Info"
+  },
+  "steps": {
+    "ariaLabel": "Setup progress",
+    "welcome": "Start",
+    "launcher": "Launcher",
+    "profile": "Speed",
+    "install": "Steps",
+    "validate": "Check",
+    "done": "Done"
+  },
+  "launchers": {
+    "official": {
+      "label": "Minecraft Launcher",
+      "detail": "Best choice if you use the normal Minecraft app."
+    },
+    "sklauncher": {
+      "label": "SKlauncher",
+      "detail": "Use this if you play through SKlauncher."
+    },
+    "manual": {
+      "label": "Manual setup",
+      "detail": "Use this if your launcher is different."
+    }
+  },
+  "profiles": {
+    "lowEnd": {
+      "label": "Low power",
+      "detail": "For older laptops or weak graphics."
+    },
+    "balanced": {
+      "label": "Recommended",
+      "detail": "Good for most players."
+    },
+    "shaders": {
+      "label": "Shaders",
+      "detail": "For stronger PCs that can handle nicer lighting."
+    }
+  },
+  "welcome": {
+    "eyebrow": "Setup",
+    "title": "Get Minecraft ready for {{server}}.",
+    "lead": "This makes a clean Minecraft folder just for {{server}}. It saves the setup file there, so your worlds and other mods stay safe.",
+    "start": "Start setup",
+    "status": {
+      "folder": {
+        "label": "Separate folder",
+        "detail": "{{server}} uses its own game folder."
+      },
+      "launcher": {
+        "label": "Works with your launcher",
+        "detail": "Pick Minecraft Launcher, SKlauncher, or manual setup."
+      },
+      "local": {
+        "label": "Local setup",
+        "detail": "This app creates the game folder on your computer."
+      }
+    },
+    "highlights": {
+      "title": "What it prepares",
+      "folder": {
+        "label": "Clean folder",
+        "detail": "A fresh {{server}} folder."
+      },
+      "launcher": {
+        "label": "Your launcher",
+        "detail": "A launcher profile for this setup."
+      },
+      "check": {
+        "label": "Final check",
+        "detail": "A check that the local files are ready."
+      }
+    }
+  },
+  "launcher": {
+    "eyebrow": "Launcher",
+    "title": "Choose your launcher.",
+    "lead": "Pick the app you use to open Minecraft. If we cannot find it, manual setup is still available.",
+    "scanAgain": "Scan again",
+    "cardTitle": "Launchers",
+    "unavailable": "Not found on this computer.",
+    "status": {
+      "found": "Found",
+      "notFound": "Not found",
+      "always": "Always available",
+      "scanning": "Scanning"
+    }
+  },
+  "profile": {
+    "eyebrow": "Speed",
+    "title": "Choose how Minecraft should run.",
+    "lead": "Pick the option that matches your computer. The setup file saves the right mod list either way.",
+    "continue": "Show steps",
+    "memory": "{{memory}} MB RAM",
+    "serverCardTitle": "Server address",
+    "serverAddress": "Address",
+    "serverHelp": "Leave this as-is unless {{server}} gives you a different address."
+  },
+  "install": {
+    "eyebrow": "Steps",
+    "title": "Review the setup steps.",
+    "lead": "This checks Fabric, creates the clean game folder, and adds a launcher profile.",
+    "run": "Set up",
+    "check": "Check setup",
+    "cardTitle": "Setup steps",
+    "emptyLog": "[waiting] Ready to create the local setup.",
+    "failedLog": "[problem] {{message}}",
+    "steps": {
+      "fabric_version": {
+        "label": "Check Fabric"
+      },
+      "game_directory": {
+        "label": "Make a separate game folder",
+        "detail": "The app creates this folder and saves the setup file there."
+      },
+      "launcher_profile": {
+        "label": "Add the launcher profile"
+      },
+      "mods_directory": {
+        "label": "Make the mods folder"
+      },
+      "setup_receipt": {
+        "label": "Save the setup file"
+      },
+      "validation": {
+        "label": "Check everything"
+      }
+    }
+  },
+  "progressLog": {
+    "title": "Log"
+  },
+  "diagnostics": {
+    "eyebrow": "Check",
+    "title": "Check the setup.",
+    "lead": "These checks look at the local setup files.",
+    "checks": {
+      "local_setup": {
+        "label": "Local setup",
+        "detail": "Could not check the setup: {{message}}"
+      },
+      "manifest": {
+        "label": "Setup list loaded",
+        "detail": "Minecraft, Fabric, server, and mod choices are ready."
+      },
+      "fabric_version": {
+        "label": "Fabric version",
+        "detail": "Fabric version is installed."
+      },
+      "game_directory": {
+        "label": "Separate game folder",
+        "detail": "The game folder is ready."
+      },
+      "launcher_profile": {
+        "label": "Launcher profile",
+        "detail": "Launcher profile is ready."
+      },
+      "mods_directory": {
+        "label": "Mods folder",
+        "detail": "The mods folder is ready."
+      },
+      "setup_receipt": {
+        "label": "Setup file",
+        "detail": "The setup file is saved."
+      }
+    }
+  },
+  "done": {
+    "eyebrow": "Done",
+    "title": "Local setup is ready.",
+    "lead": "The clean game folder and setup file are ready on this computer.",
+    "export": "Export report",
+    "startOver": "Start over",
+    "summary": {
+      "label": "Flow complete",
+      "detail": "Choice: {{profile}} · Launcher: {{launcher}}"
+    },
+    "reportTitle": "Report",
+    "reportFailed": "Could not export the report: {{message}}"
+  }
+}
