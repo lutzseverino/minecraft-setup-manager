@@ -17,7 +17,7 @@
   },
   "steps": {
     "ariaLabel": "Setup progress",
-    "welcome": "Start",
+    "server": "Server",
     "launcher": "Launcher",
     "profile": "Speed",
     "install": "Steps",
@@ -52,39 +52,28 @@
       "detail": "For stronger PCs that can handle nicer lighting."
     }
   },
-  "welcome": {
-    "eyebrow": "Setup",
-    "title": "Get Minecraft ready for {{server}}.",
-    "lead": "This makes a clean Minecraft folder just for {{server}}. It saves the setup file there, so your worlds and other mods stay safe.",
-    "start": "Start setup",
-    "status": {
-      "folder": {
-        "label": "Separate folder",
-        "detail": "{{server}} uses its own game folder."
-      },
-      "launcher": {
-        "label": "Works with your launcher",
-        "detail": "Pick Minecraft Launcher, SKlauncher, or manual setup."
-      },
-      "local": {
-        "label": "Local setup",
-        "detail": "This app creates the game folder on your computer."
-      }
+  "server": {
+    "eyebrow": "Server",
+    "title": "Choose a server.",
+    "lead": "Enter the server address. The app gets the setup list from that server and shows what it wants to add or update.",
+    "addTitle": "Add a server",
+    "addressLabel": "Server address",
+    "addressPlaceholder": "play.example.com",
+    "help": "Use the address players type in Minecraft. The app looks for the setup list from there.",
+    "fetch": "Get setup list",
+    "checking": "Checking",
+    "continue": "Continue",
+    "errorLabel": "Could not get setup list",
+    "savedTitle": "Saved servers",
+    "emptySaved": "Saved servers will appear here after you add one.",
+    "unknownName": "This server",
+    "resolved": {
+      "detail": "Setup version {{version}} for Minecraft {{minecraft}}."
     },
-    "highlights": {
-      "title": "What it prepares",
-      "folder": {
-        "label": "Clean folder",
-        "detail": "A fresh {{server}} folder."
-      },
-      "launcher": {
-        "label": "Your launcher",
-        "detail": "A launcher profile for this setup."
-      },
-      "check": {
-        "label": "Final check",
-        "detail": "A check that the local files are ready."
-      }
+    "status": {
+      "newSetup": "New setup",
+      "upToDate": "Up to date",
+      "updateAvailable": "Update"
     }
   },
   "launcher": {
@@ -107,9 +96,8 @@
     "lead": "Pick the option that matches your computer. The setup file saves the right mod list either way.",
     "continue": "Show steps",
     "memory": "{{memory}} MB RAM",
-    "serverCardTitle": "Server address",
-    "serverAddress": "Address",
-    "serverHelp": "Leave this as-is unless {{server}} gives you a different address."
+    "serverCardTitle": "Server setup",
+    "manifestVersion": "Setup version {{version}}"
   },
   "install": {
     "eyebrow": "Steps",

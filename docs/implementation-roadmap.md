@@ -1,19 +1,18 @@
 # Implementation Roadmap
 
-1. Load `src-tauri/manifest/maresme-client.json` with schema validation instead
-   of the current in-code manifest.
-2. Keep the frontend `serverCatalog` and backend manifest shape aligned, then
-   allow a second server to prove the catalog boundary.
-3. Move Maresme server facts from hardcoded Rust/frontend catalogs into the
-   validated manifest source of truth.
-4. Add SKlauncher discovery and profile adapter behavior.
-5. Define manual setup export instructions for unknown launchers.
-6. Extend isolated game directory repair beyond the current folder and receipt
-   creation.
-7. Resolve Fabric installer artifacts for Minecraft `26.1.2` and loader `0.19.3`.
-8. Resolve Modrinth pinned files, hashes, and compatibility constraints.
-9. Write the Maresme MC server entry through a tested `servers.dat` module.
-10. Add real checks for files, hashes, launcher profile metadata, and server entry.
+1. Add semantic manifest validation and schema-version migration rules.
+2. Replace string setup steps with typed setup actions and a pure planner.
+3. Persist installed manifest fingerprints and resource fingerprints after apply.
+4. Add update and repair previews: add, replace, remove managed files, leave user
+   files alone.
+5. Implement Fabric loader installation through a loader adapter.
+6. Resolve Modrinth pinned files, hashes, and compatibility constraints.
+7. Download resources into managed folders with hash verification and temp-file
+   renames.
+8. Write server entries through a tested `servers.dat` module.
+9. Add SKlauncher profile adapter behavior.
+10. Add manifest signing or trust pinning before accepting public remote configs.
+11. Define the future Minecraft server plugin around this manifest contract.
 
 Each step should keep command handlers thin and add tests around the backend
 module that owns the behavior.

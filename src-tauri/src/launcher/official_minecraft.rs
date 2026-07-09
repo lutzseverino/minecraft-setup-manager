@@ -324,7 +324,7 @@ mod tests {
         set_home(&home);
         let minecraft_dir = default_minecraft_dir_in(&home);
         let profiles_path = minecraft_dir.join("launcher_profiles.json");
-        let version_id = "fabric-loader-0.19.3-26.1.2";
+        let version_id = "fabric-loader-0.16.14-1.21.6";
         let version_path = minecraft_dir
             .join("versions")
             .join(version_id)
@@ -340,13 +340,13 @@ mod tests {
                         "name": "Other",
                         "type": "custom"
                     },
-                    "maresme-mc": {
+                    "example-server": {
                         "created": "2026-01-01T00:00:00.000Z",
                         "gameDir": "/old/path",
                         "icon": "Crafting_Table",
                         "lastUsed": "2026-01-02T00:00:00.000Z",
                         "lastVersionId": "old-version",
-                        "name": "Old Maresme",
+                        "name": "Old Example Server",
                         "type": "custom",
                         "unknownProfileField": true
                     }
@@ -361,7 +361,8 @@ mod tests {
         .expect("write profiles");
 
         let plan = install_plan();
-        let game_dir = home.join("Library/Application Support/Minecraft Setup Manager/Maresme MC");
+        let game_dir =
+            home.join("Library/Application Support/Minecraft Setup Manager/Example Server");
         let adapter = OfficialMinecraftLauncherAdapter;
         let result = adapter
             .ensure_profile(&plan, &game_dir)
@@ -377,19 +378,25 @@ mod tests {
         assert_eq!(written["settings"]["unknownSetting"], true);
         assert_eq!(written["profiles"]["other-profile"]["name"], "Other");
         assert_eq!(
-            written["profiles"]["maresme-mc"]["unknownProfileField"],
+            written["profiles"]["example-server"]["unknownProfileField"],
             true
         );
-        assert_eq!(written["profiles"]["maresme-mc"]["icon"], "Crafting_Table");
         assert_eq!(
-            written["profiles"]["maresme-mc"]["gameDir"],
+            written["profiles"]["example-server"]["icon"],
+            "Crafting_Table"
+        );
+        assert_eq!(
+            written["profiles"]["example-server"]["gameDir"],
             game_dir.display().to_string()
         );
         assert_eq!(
-            written["profiles"]["maresme-mc"]["lastVersionId"],
+            written["profiles"]["example-server"]["lastVersionId"],
             version_id
         );
-        assert_eq!(written["profiles"]["maresme-mc"]["name"], "Maresme MC");
+        assert_eq!(
+            written["profiles"]["example-server"]["name"],
+            "Example Server"
+        );
 
         let second_result = adapter
             .ensure_profile(&plan, &game_dir)
@@ -428,7 +435,7 @@ mod tests {
             .ensure_profile(&install_plan(), &home.join("game-dir"))
             .expect_err("expected missing fabric error");
 
-        assert!(error.contains("Fabric 0.19.3 for Minecraft 26.1.2 is not installed"));
+        assert!(error.contains("Fabric 0.16.14 for Minecraft 1.21.6 is not installed"));
         let after = std::fs::read_to_string(&profiles_path).expect("read after");
         assert_eq!(before, after);
         assert!(std::fs::read_dir(&minecraft_dir)
@@ -441,12 +448,12 @@ mod tests {
 
     fn install_plan() -> InstallPlan {
         InstallPlan {
-            server_id: "maresme-mc".to_string(),
-            minecraft_version: "26.1.2".to_string(),
-            fabric_loader_version: "0.19.3".to_string(),
-            game_directory_name: "Maresme MC".to_string(),
-            server_name: "Maresme MC".to_string(),
-            server_address: "localhost".to_string(),
+            server_id: "example-server".to_string(),
+            minecraft_version: "1.21.6".to_string(),
+            fabric_loader_version: "0.16.14".to_string(),
+            game_directory_name: "Example Server".to_string(),
+            server_name: "Example Server".to_string(),
+            server_address: "play.example.com".to_string(),
             launcher: LauncherKind::Official,
             profile: PerformanceProfileId::Balanced,
             steps: vec![],

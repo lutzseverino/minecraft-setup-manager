@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 
 import { AppTooltipProvider } from "@/components/app/app-tooltip";
 import { Stepper, StepperStep } from "@/components/app/stepper";
-import { defaultServer } from "@/config/server-catalog";
 import {
   fallbackDetections,
   performanceProfiles,
@@ -14,6 +13,8 @@ import {
   detectLaunchers,
   exportDiagnostics,
   getInstallPlan,
+  listSavedServers,
+  resolveServerManifest,
   startInstall,
   validateInstallation,
 } from "@/lib/tauri";
@@ -24,6 +25,8 @@ import type {
   LauncherDetection,
   LauncherKind,
   PerformanceProfileId,
+  ResolvedServerManifest,
+  SavedServerEntry,
   ValidationResult,
   WizardStepId,
 } from "@/lib/types";
@@ -32,7 +35,7 @@ import { DoneScreen } from "@/screens/done-screen";
 import { InstallScreen } from "@/screens/install-screen";
 import { LauncherScreen } from "@/screens/launcher-screen";
 import { ProfileScreen } from "@/screens/profile-screen";
-import { WelcomeScreen } from "@/screens/welcome-screen";
+import { ServerScreen } from "@/screens/server-screen";
 
 function stepIndex(step: WizardStepId) {
   return wizardSteps.findIndex((item) => item.id === step);
@@ -40,14 +43,17 @@ function stepIndex(step: WizardStepId) {
 
 export default function App() {
   const { t } = useTranslation();
-  const [step, setStep] = useState<WizardStepId>("welcome");
+  const [step, setStep] = useState<WizardStepId>("server");
+  const [savedServers, setSavedServers] = useState<SavedServerEntry[]>([]);
+  const [serverAddress, setServerAddress] = useState("");
+  const [resolvedServer, setResolvedServer] =
+    useState<ResolvedServerManifest | null>(null);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+  const [isResolvingServer, setIsResolvingServer] = useState(false);
   const [detections, setDetections] =
     useState<LauncherDetection[]>(fallbackDetections);
   const [launcher, setLauncher] = useState<LauncherKind>("official");
   const [profile, setProfile] = useState<PerformanceProfileId>("balanced");
-  const [serverAddress, setServerAddress] = useState(
-    defaultServer.defaultAddress,
-  );
   const [plan, setPlan] = useState<InstallPlan | null>(null);
   const [installProgress, setInstallProgress] = useState<InstallProgress | null>(
     null,
@@ -59,13 +65,28 @@ export default function App() {
   const currentStepIndex = stepIndex(step);
   const installRequest = useMemo(
     () => ({
-      serverId: defaultServer.id,
+      serverId: resolvedServer?.server.id ?? "",
       launcher,
       profile,
-      serverAddress: serverAddress || defaultServer.defaultAddress,
+      serverAddress:
+        resolvedServer?.manifest.server.address ?? serverAddress.trim(),
     }),
-    [launcher, profile, serverAddress],
+    [launcher, profile, resolvedServer, serverAddress],
   );
+
+  useEffect(() => {
+    void refreshSavedServers();
+  }, []);
+
+  useEffect(() => {
+    if (step === "launcher") {
+      void refreshDetections();
+    }
+  }, [step]);
+
+  async function refreshSavedServers() {
+    setSavedServers(await listSavedServers());
+  }
 
   async function refreshDetections() {
     const nextDetections = await detectLaunchers();
@@ -90,11 +111,23 @@ export default function App() {
     });
   }
 
-  useEffect(() => {
-    if (step === "launcher") {
-      void refreshDetections();
+  async function resolveServer(address = serverAddress) {
+    setIsResolvingServer(true);
+    setResolveError(null);
+
+    try {
+      const nextResolvedServer = await resolveServerManifest({ address });
+      setResolvedServer(nextResolvedServer);
+      setServerAddress(nextResolvedServer.server.address);
+      setLauncher(nextResolvedServer.server.selectedLauncher);
+      setProfile(nextResolvedServer.server.selectedProfile);
+      await refreshSavedServers();
+    } catch (error) {
+      setResolveError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsResolvingServer(false);
     }
-  }, [step]);
+  }
 
   async function buildPlan() {
     const nextPlan = await getInstallPlan(installRequest);
@@ -160,7 +193,7 @@ export default function App() {
   }
 
   function restart() {
-    setStep("welcome");
+    setStep("server");
     setPlan(null);
     setInstallProgress(null);
     setValidationResult(null);
@@ -196,10 +229,20 @@ export default function App() {
             </Stepper>
           </header>
 
-          {step === "welcome" ? (
-            <WelcomeScreen
+          {step === "server" ? (
+            <ServerScreen
+              address={serverAddress}
+              error={resolveError}
+              isResolving={isResolvingServer}
+              onAddressChange={setServerAddress}
               onContinue={() => setStep("launcher")}
-              server={defaultServer}
+              onResolve={() => void resolveServer()}
+              onSelectSavedServer={(server) => {
+                setServerAddress(server.address);
+                void resolveServer(server.address);
+              }}
+              resolved={resolvedServer}
+              savedServers={savedServers}
             />
           ) : null}
           {step === "launcher" ? (
@@ -215,11 +258,9 @@ export default function App() {
             <ProfileScreen
               onContinue={buildPlan}
               onProfileChange={setProfile}
-              onServerAddressChange={setServerAddress}
               profile={profile}
               profiles={performanceProfiles}
-              server={defaultServer}
-              serverAddress={serverAddress}
+              server={resolvedServer}
             />
           ) : null}
           {step === "install" ? (

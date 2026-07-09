@@ -17,7 +17,7 @@
   },
   "steps": {
     "ariaLabel": "Progreso de la configuracion",
-    "welcome": "Inicio",
+    "server": "Servidor",
     "launcher": "Launcher",
     "profile": "Rendimiento",
     "install": "Pasos",
@@ -52,39 +52,28 @@
       "detail": "Para PCs potentes con mejor iluminacion."
     }
   },
-  "welcome": {
-    "eyebrow": "Configuracion",
-    "title": "Prepara Minecraft para {{server}}.",
-    "lead": "Esto crea una carpeta limpia de Minecraft solo para {{server}}. Guarda alli el archivo de configuracion, asi tus mundos y otros mods se quedan aparte.",
-    "start": "Empezar",
-    "status": {
-      "folder": {
-        "label": "Carpeta separada",
-        "detail": "{{server}} usa su propia carpeta de juego."
-      },
-      "launcher": {
-        "label": "Funciona con tu launcher",
-        "detail": "Elige Minecraft Launcher, SKlauncher o configuracion manual."
-      },
-      "local": {
-        "label": "Configuracion local",
-        "detail": "Esta app crea la carpeta de juego en tu ordenador."
-      }
+  "server": {
+    "eyebrow": "Servidor",
+    "title": "Elige un servidor.",
+    "lead": "Escribe la direccion del servidor. La app obtiene la lista de configuracion de ese servidor y muestra lo que quiere anadir o actualizar.",
+    "addTitle": "Anadir un servidor",
+    "addressLabel": "Direccion del servidor",
+    "addressPlaceholder": "play.example.com",
+    "help": "Usa la direccion que los jugadores escriben en Minecraft. La app busca la lista de configuracion desde ahi.",
+    "fetch": "Obtener lista",
+    "checking": "Revisando",
+    "continue": "Continuar",
+    "errorLabel": "No se pudo obtener la lista",
+    "savedTitle": "Servidores guardados",
+    "emptySaved": "Los servidores guardados apareceran aqui despues de anadir uno.",
+    "unknownName": "Este servidor",
+    "resolved": {
+      "detail": "Version de configuracion {{version}} para Minecraft {{minecraft}}."
     },
-    "highlights": {
-      "title": "Lo que deja listo",
-      "folder": {
-        "label": "Carpeta limpia",
-        "detail": "Una carpeta nueva para {{server}}."
-      },
-      "launcher": {
-        "label": "Tu launcher",
-        "detail": "Un perfil del launcher para esta configuracion."
-      },
-      "check": {
-        "label": "Revision final",
-        "detail": "Una revision de los archivos locales."
-      }
+    "status": {
+      "newSetup": "Nueva",
+      "upToDate": "Al dia",
+      "updateAvailable": "Actualizar"
     }
   },
   "launcher": {
@@ -107,9 +96,8 @@
     "lead": "Elige la opcion que encaje con tu ordenador. El archivo de configuracion guarda la lista correcta de mods.",
     "continue": "Ver pasos",
     "memory": "{{memory}} MB RAM",
-    "serverCardTitle": "Direccion del servidor",
-    "serverAddress": "Direccion",
-    "serverHelp": "Dejalo asi salvo que {{server}} te de otra direccion."
+    "serverCardTitle": "Configuracion del servidor",
+    "manifestVersion": "Version de configuracion {{version}}"
   },
   "install": {
     "eyebrow": "Pasos",

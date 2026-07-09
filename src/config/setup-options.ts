@@ -24,7 +24,7 @@ export type PerformanceProfileOption = Readonly<{
 }>;
 
 export const wizardSteps = [
-  { id: "welcome", labelKey: "steps.welcome" },
+  { id: "server", labelKey: "steps.server" },
   { id: "launcher", labelKey: "steps.launcher" },
   { id: "profile", labelKey: "steps.profile" },
   { id: "install", labelKey: "steps.install" },

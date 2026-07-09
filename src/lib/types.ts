@@ -3,7 +3,7 @@ export type LauncherKind = "official" | "sklauncher" | "manual";
 export type PerformanceProfileId = "low_end" | "balanced" | "shaders";
 
 export type WizardStepId =
-  | "welcome"
+  | "server"
   | "launcher"
   | "profile"
   | "install"
@@ -49,6 +49,77 @@ export type InstallPlanRequest = Readonly<{
   launcher: LauncherKind;
   profile: PerformanceProfileId;
   serverAddress: string;
+}>;
+
+export type ManifestLoaderKind = "none" | "fabric";
+
+export type SetupManifest = Readonly<{
+  schemaVersion: number;
+  manifestVersion: string;
+  id: string;
+  displayName: string;
+  server: {
+    name: string;
+    address: string;
+  };
+  minecraft: {
+    version: string;
+    loader: {
+      kind: ManifestLoaderKind;
+      version?: string | null;
+    };
+  };
+  install: {
+    gameDirectoryName: string;
+    launcherProfileName: string;
+  };
+  profiles: Array<{
+    id: string;
+    label: string;
+    recommendedMemoryMb: number;
+    includesShaders?: boolean;
+  }>;
+  resources: Array<{
+    id: string;
+    name: string;
+    resourceType: "mod" | "resource_pack" | "shader_pack" | "config";
+    target: "mods" | "resourcepacks" | "shaderpacks" | "config";
+    required: boolean;
+    source: Record<string, unknown>;
+    hashes?: Record<string, string>;
+  }>;
+  serverEntry?: {
+    name: string;
+    address: string;
+  } | null;
+}>;
+
+export type SavedServerEntry = Readonly<{
+  id: string;
+  address: string;
+  manifestUrl: string;
+  displayName: string;
+  lastCheckedAt: string;
+  lastInstalledAt: string | null;
+  selectedLauncher: LauncherKind;
+  selectedProfile: PerformanceProfileId;
+  installedManifestVersion: string | null;
+}>;
+
+export type ServerUpdateStatus =
+  | "new_setup"
+  | "up_to_date"
+  | "update_available";
+
+export type ResolveServerManifestRequest = Readonly<{
+  address: string;
+}>;
+
+export type ResolvedServerManifest = Readonly<{
+  server: SavedServerEntry;
+  manifest: SetupManifest;
+  manifestFingerprint: string;
+  updateStatus: ServerUpdateStatus;
 }>;
 
 export type InstallPlan = Readonly<{

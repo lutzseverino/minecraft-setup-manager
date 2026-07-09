@@ -12,38 +12,32 @@ import {
   AppToggleGroupItem,
 } from "@/components/app/app-toggle-group";
 import { ScreenShell } from "@/components/app/screen-shell";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import type { ServerConfig } from "@/config/server-catalog";
 import type { PerformanceProfileOption } from "@/config/setup-options";
-import type { PerformanceProfileId } from "@/lib/types";
+import type { PerformanceProfileId, ResolvedServerManifest } from "@/lib/types";
 
 type ProfileScreenProps = Readonly<{
   onContinue: () => void;
   onProfileChange: (profile: PerformanceProfileId) => void;
-  onServerAddressChange: (serverAddress: string) => void;
   profile: PerformanceProfileId;
   profiles: PerformanceProfileOption[];
-  server: ServerConfig;
-  serverAddress: string;
+  server: ResolvedServerManifest | null;
 }>;
 
 export function ProfileScreen({
   onContinue,
   onProfileChange,
-  onServerAddressChange,
   profile,
   profiles,
   server,
-  serverAddress,
 }: ProfileScreenProps) {
   const { t } = useTranslation();
+  const serverName = server?.manifest.displayName ?? t("server.unknownName");
 
   return (
     <ScreenShell
       actions={<AppButton onClick={onContinue}>{t("profile.continue")}</AppButton>}
       eyebrow={t("profile.eyebrow")}
-      lead={t("profile.lead", { server: server.displayName })}
+      lead={t("profile.lead", { server: serverName })}
       title={t("profile.title")}
     >
       <div className="grid gap-4">
@@ -95,17 +89,16 @@ export function ProfileScreen({
               {t("profile.serverCardTitle")}
             </AppCardTitle>
           </AppCardHeader>
-          <AppCardContent className="grid gap-2">
-            <Label htmlFor="server-address">{t("profile.serverAddress")}</Label>
-            <Input
-              id="server-address"
-              onChange={(event) => onServerAddressChange(event.target.value)}
-              placeholder={server.defaultAddress}
-              value={serverAddress}
-            />
-            <p className="text-sm text-muted-foreground">
-              {t("profile.serverHelp", { server: server.displayName })}
-            </p>
+          <AppCardContent className="grid gap-1 text-sm">
+            <div className="font-medium">{serverName}</div>
+            <div className="text-muted-foreground">
+              {server?.manifest.server.address}
+            </div>
+            <div className="font-mono text-xs text-muted-foreground">
+              {t("profile.manifestVersion", {
+                version: server?.manifest.manifestVersion ?? "",
+              })}
+            </div>
           </AppCardContent>
         </AppCard>
       </div>

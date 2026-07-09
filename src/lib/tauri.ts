@@ -1,14 +1,16 @@
 import { invoke } from "@tauri-apps/api/core";
 
-import { getServerConfig } from "@/config/server-catalog";
-import { getOptionalModNames } from "@/config/setup-options";
 import type {
   DiagnosticBundle,
   InstallPlan,
   InstallPlanRequest,
   InstallProgress,
   LauncherDetection,
+  ResolvedServerManifest,
+  ResolveServerManifestRequest,
+  SavedServerEntry,
   StartInstallRequest,
+  SetupManifest,
   ValidationResult,
 } from "@/lib/types";
 
@@ -27,6 +29,50 @@ async function invokeOrFallback<T>(
 
   return invoke<T>(command, args);
 }
+
+const demoManifest = {
+  schemaVersion: 1,
+  manifestVersion: "demo.1",
+  id: "example-server",
+  displayName: "Example Server",
+  server: {
+    name: "Example Server",
+    address: "play.example.com",
+  },
+  minecraft: {
+    version: "1.21.6",
+    loader: {
+      kind: "fabric",
+      version: "0.16.14",
+    },
+  },
+  install: {
+    gameDirectoryName: "Example Server",
+    launcherProfileName: "Example Server",
+  },
+  profiles: [
+    {
+      id: "balanced",
+      label: "Recommended",
+      recommendedMemoryMb: 4096,
+    },
+  ],
+  resources: [
+    {
+      id: "fabric-api",
+      name: "Fabric API",
+      resourceType: "mod",
+      target: "mods",
+      required: true,
+      source: { kind: "modrinth", project: "fabric-api", version: "demo" },
+      hashes: {},
+    },
+  ],
+  serverEntry: {
+    name: "Example Server",
+    address: "play.example.com",
+  },
+} satisfies SetupManifest;
 
 export async function detectLaunchers() {
   const fallback: LauncherDetection[] = [
@@ -53,24 +99,52 @@ export async function detectLaunchers() {
   return invokeOrFallback<LauncherDetection[]>("detect_launchers", {}, fallback);
 }
 
-export async function getInstallPlan(request: InstallPlanRequest) {
-  const server = getServerConfig(request.serverId);
-  const optionalMods = getOptionalModNames(
-    request.profile,
-    server.balancedExtras,
-    server.shadersExtras,
-  );
+export async function listSavedServers() {
+  return invokeOrFallback<SavedServerEntry[]>("list_saved_servers", {}, []);
+}
 
+export async function resolveServerManifest(
+  request: ResolveServerManifestRequest,
+) {
+  const address = request.address.trim() || demoManifest.server.address;
+  const fallbackServer = {
+    id: `${demoManifest.id}@${address}`,
+    address,
+    manifestUrl: `https://${address}/.well-known/minecraft-setup-manager/manifest.json`,
+    displayName: demoManifest.displayName,
+    lastCheckedAt: new Date().toISOString(),
+    lastInstalledAt: null,
+    selectedLauncher: "official",
+    selectedProfile: "balanced",
+    installedManifestVersion: null,
+  } satisfies SavedServerEntry;
+
+  return invokeOrFallback<ResolvedServerManifest>(
+    "resolve_server_manifest",
+    { request },
+    {
+      server: fallbackServer,
+      manifest: {
+        ...demoManifest,
+        server: { ...demoManifest.server, address },
+      },
+      manifestFingerprint: "sha256:browser-demo",
+      updateStatus: "new_setup",
+    },
+  );
+}
+
+export async function getInstallPlan(request: InstallPlanRequest) {
   return invokeOrFallback<InstallPlan>(
     "get_install_plan",
     { request },
     {
-      serverId: server.id,
-      minecraftVersion: server.minecraftVersion,
-      fabricLoaderVersion: server.fabricLoaderVersion,
-      gameDirectoryName: server.gameDirectoryName,
-      serverName: server.displayName,
-      serverAddress: request.serverAddress || server.defaultAddress,
+      serverId: request.serverId || "example-server",
+      minecraftVersion: demoManifest.minecraft.version,
+      fabricLoaderVersion: demoManifest.minecraft.loader.version ?? "",
+      gameDirectoryName: demoManifest.install.gameDirectoryName,
+      serverName: demoManifest.displayName,
+      serverAddress: request.serverAddress || demoManifest.server.address,
       launcher: request.launcher,
       profile: request.profile,
       steps: [
@@ -81,8 +155,10 @@ export async function getInstallPlan(request: InstallPlanRequest) {
         "setup_receipt",
         "validation",
       ],
-      requiredMods: server.requiredMods,
-      optionalMods,
+      requiredMods: demoManifest.resources
+        .filter((resource) => resource.required)
+        .map((resource) => resource.name),
+      optionalMods: [],
       warnings: [
         "Open the desktop app to create folders on this computer.",
       ],
@@ -165,7 +241,7 @@ export async function exportDiagnostics() {
     "export_diagnostics",
     {},
     {
-      path: "~/Desktop/maresme-mc-check-report.json",
+      path: "~/Desktop/minecraft-setup-manager-report.json",
       summary: "Desktop app saves this report on your Desktop.",
     },
   );
