@@ -24,6 +24,7 @@ impl LauncherAdapter for OfficialMinecraftLauncherAdapter {
             return LauncherDetection {
                 kind: LauncherKind::Official,
                 status: LauncherDetectionStatus::NotFound,
+                setup_supported: true,
                 detail: "Could not find the Minecraft folder.".to_string(),
                 confidence: 0.4,
             };
@@ -35,6 +36,7 @@ impl LauncherAdapter for OfficialMinecraftLauncherAdapter {
             LauncherDetection {
                 kind: LauncherKind::Official,
                 status: LauncherDetectionStatus::Detected,
+                setup_supported: true,
                 detail: format!("Launcher profiles found at {}.", profiles_path.display()),
                 confidence: 0.95,
             }
@@ -42,6 +44,7 @@ impl LauncherAdapter for OfficialMinecraftLauncherAdapter {
             LauncherDetection {
                 kind: LauncherKind::Official,
                 status: LauncherDetectionStatus::Detected,
+                setup_supported: true,
                 detail: format!(
                     "Minecraft folder found at {}, but launcher profiles were not found.",
                     path.display()
@@ -52,6 +55,7 @@ impl LauncherAdapter for OfficialMinecraftLauncherAdapter {
             LauncherDetection {
                 kind: LauncherKind::Official,
                 status: LauncherDetectionStatus::NotFound,
+                setup_supported: true,
                 detail: format!("Minecraft folder was not found at {}.", path.display()),
                 confidence: 0.7,
             }

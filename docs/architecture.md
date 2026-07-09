@@ -5,7 +5,8 @@ TypeScript frontend.
 
 ## Responsibility Boundaries
 
-- `src/screens/` owns wizard composition and UI state.
+- `src/hooks/` owns wizard orchestration, async command state, and lifecycle resets.
+- `src/screens/` owns presentational wizard composition.
 - `src/components/ui/` owns foundational shadcn/Radix-style primitives.
 - `src/components/app/` owns composed app UI pieces.
 - `src/config/` owns generic setup UI metadata, such as launcher display details

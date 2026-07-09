@@ -28,11 +28,12 @@ export function DiagnosticsScreen({
   result,
 }: DiagnosticsScreenProps) {
   const { t } = useTranslation();
+  const canFinish = result !== null && result.overall !== "fail";
 
   return (
     <ScreenShell
       actions={
-        <AppButton onClick={onContinue}>
+        <AppButton disabled={!canFinish} onClick={onContinue}>
           {t("common.done")}
           <ClipboardCheckIcon data-icon="inline-end" />
         </AppButton>

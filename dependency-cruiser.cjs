@@ -39,6 +39,14 @@ module.exports = {
       to: { path: "^src/screens/" },
     },
     {
+      name: "hooks-own-state-not-rendering",
+      severity: "error",
+      comment:
+        "Wizard hooks own orchestration state and must not depend on screen or component rendering.",
+      from: { path: "^src/hooks/" },
+      to: { path: "^src/(components|screens)/" },
+    },
+    {
       name: "config-stays-pure",
       severity: "error",
       comment:

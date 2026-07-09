@@ -91,6 +91,7 @@ pub enum ServerUpdateStatus {
 pub struct LauncherDetection {
     pub kind: LauncherKind,
     pub status: LauncherDetectionStatus,
+    pub setup_supported: bool,
     pub detail: String,
     pub confidence: f32,
 }

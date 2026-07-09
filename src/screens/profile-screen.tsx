@@ -12,6 +12,7 @@ import {
   AppToggleGroupItem,
 } from "@/components/app/app-toggle-group";
 import { ScreenShell } from "@/components/app/screen-shell";
+import { StatusRow } from "@/components/app/status-row";
 import { profileIcon } from "@/config/setup-options";
 import type {
   ManifestPerformanceProfile,
@@ -20,6 +21,8 @@ import type {
 } from "@/lib/types";
 
 type ProfileScreenProps = Readonly<{
+  error: string | null;
+  isBuilding: boolean;
   onContinue: () => void;
   onProfileChange: (profile: PerformanceProfileId) => void;
   profile: PerformanceProfileId;
@@ -28,6 +31,8 @@ type ProfileScreenProps = Readonly<{
 }>;
 
 export function ProfileScreen({
+  error,
+  isBuilding,
   onContinue,
   onProfileChange,
   profile,
@@ -40,8 +45,8 @@ export function ProfileScreen({
   return (
     <ScreenShell
       actions={
-        <AppButton disabled={!profile} onClick={onContinue}>
-          {t("profile.continue")}
+        <AppButton disabled={!profile || isBuilding} onClick={onContinue}>
+          {isBuilding ? t("profile.building") : t("profile.continue")}
         </AppButton>
       }
       eyebrow={t("profile.eyebrow")}
@@ -49,6 +54,9 @@ export function ProfileScreen({
       title={t("profile.title")}
     >
       <div className="grid gap-4">
+        {error ? (
+          <StatusRow detail={error} label={t("profile.errorLabel")} tone="error" />
+        ) : null}
         <AppToggleGroup
           className="grid w-full auto-rows-fr items-stretch gap-3 sm:grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]"
           onValueChange={(value) => {

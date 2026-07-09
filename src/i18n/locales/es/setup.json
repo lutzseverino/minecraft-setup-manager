@@ -84,14 +84,16 @@
   "launcher": {
     "eyebrow": "Launcher",
     "title": "Elige tu launcher.",
-    "lead": "Elige la app con la que abres Minecraft. Si no la encontramos, puedes usar el modo manual.",
+    "lead": "Elige la app con la que abres Minecraft. Esta version funciona con el Minecraft Launcher normal.",
     "scanAgain": "Buscar otra vez",
+    "errorLabel": "No se pudieron revisar los launchers",
     "cardTitle": "Launchers",
     "unavailable": "No se ha encontrado en este ordenador.",
+    "notSupported": "Este launcher estara disponible mas adelante.",
     "status": {
       "found": "Encontrado",
       "notFound": "No encontrado",
-      "always": "Siempre disponible",
+      "notSupported": "Aun no disponible",
       "scanning": "Buscando"
     }
   },
@@ -100,6 +102,9 @@
     "title": "Elige como debe ir Minecraft.",
     "lead": "Elige la opcion que encaje con tu ordenador. El archivo de configuracion guarda la lista correcta de mods.",
     "continue": "Ver pasos",
+    "building": "Preparando pasos",
+    "errorLabel": "No se pudieron preparar los pasos",
+    "missingSelection": "Elige una opcion antes de continuar.",
     "memory": "{{memory}} MB RAM",
     "serverCardTitle": "Configuracion del servidor",
     "manifestVersion": "Version de configuracion {{version}}"
@@ -109,7 +114,9 @@
     "title": "Revisa los pasos.",
     "lead": "Esto revisa Fabric, crea una carpeta limpia y anade un perfil del launcher.",
     "run": "Configurar",
+    "running": "Configurando",
     "check": "Revisar",
+    "checking": "Revisando",
     "cardTitle": "Pasos",
     "emptyLog": "[esperando] Listo para crear la configuracion local.",
     "failedLog": "[problema] {{message}}",

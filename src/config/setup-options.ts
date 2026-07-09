@@ -48,19 +48,22 @@ export const fallbackDetections = [
   {
     kind: "official",
     status: "manual",
+    setupSupported: true,
     detail: "Detection has not run yet.",
     confidence: 0,
   },
   {
     kind: "sklauncher",
     status: "manual",
+    setupSupported: false,
     detail: "Detection has not run yet.",
     confidence: 0,
   },
   {
     kind: "manual",
     status: "manual",
-    detail: "Manual setup is always available.",
+    setupSupported: false,
+    detail: "Manual setup is not available yet.",
     confidence: 1,
   },
 ] satisfies LauncherDetection[];

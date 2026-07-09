@@ -84,7 +84,7 @@ export function ServerScreen({
               id="server-address"
               onChange={(event) => onAddressChange(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter" && address.trim()) {
+                if (event.key === "Enter" && address.trim() && !isResolving) {
                   onResolve();
                 }
               }}

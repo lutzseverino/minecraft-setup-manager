@@ -9,6 +9,7 @@ impl LauncherAdapter for SklauncherAdapter {
         LauncherDetection {
             kind: LauncherKind::Sklauncher,
             status: LauncherDetectionStatus::NotFound,
+            setup_supported: false,
             detail: "Not found on this computer.".to_string(),
             confidence: 0.22,
         }

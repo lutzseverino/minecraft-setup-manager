@@ -84,14 +84,16 @@
   "launcher": {
     "eyebrow": "Launcher",
     "title": "Choose your launcher.",
-    "lead": "Pick the app you use to open Minecraft. If we cannot find it, manual setup is still available.",
+    "lead": "Pick the app you use to open Minecraft. This version works with the normal Minecraft Launcher.",
     "scanAgain": "Scan again",
+    "errorLabel": "Could not check launchers",
     "cardTitle": "Launchers",
     "unavailable": "Not found on this computer.",
+    "notSupported": "Support for this launcher is coming later.",
     "status": {
       "found": "Found",
       "notFound": "Not found",
-      "always": "Always available",
+      "notSupported": "Not ready yet",
       "scanning": "Scanning"
     }
   },
@@ -100,6 +102,9 @@
     "title": "Choose how Minecraft should run.",
     "lead": "Pick the option that matches your computer. The setup file saves the right mod list either way.",
     "continue": "Show steps",
+    "building": "Preparing steps",
+    "errorLabel": "Could not prepare the steps",
+    "missingSelection": "Choose a setup option before continuing.",
     "memory": "{{memory}} MB RAM",
     "serverCardTitle": "Server setup",
     "manifestVersion": "Setup version {{version}}"
@@ -109,7 +114,9 @@
     "title": "Review the setup steps.",
     "lead": "This checks Fabric, creates the clean game folder, and adds a launcher profile.",
     "run": "Set up",
+    "running": "Setting up",
     "check": "Check setup",
+    "checking": "Checking setup",
     "cardTitle": "Setup steps",
     "emptyLog": "[waiting] Ready to create the local setup.",
     "failedLog": "[problem] {{message}}",

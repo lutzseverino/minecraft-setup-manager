@@ -24,6 +24,7 @@ export type LauncherDetectionStatus = "detected" | "not_found" | "manual";
 export type LauncherDetection = Readonly<{
   kind: LauncherKind;
   status: LauncherDetectionStatus;
+  setupSupported: boolean;
   detail: string;
   confidence: number;
 }>;
