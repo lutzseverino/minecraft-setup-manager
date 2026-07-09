@@ -137,11 +137,12 @@ export type SetupActionKind =
   | "ensure_game_directory"
   | "ensure_launcher_profile"
   | "sync_resource"
+  | "remove_resource"
   | "write_server_entry"
   | "write_setup_receipt"
   | "validate_setup";
 
-export type SetupActionIntent = "add" | "update" | "verify";
+export type SetupActionIntent = "add" | "update" | "remove" | "verify";
 
 export type SetupActionStatus = "ready" | "not_implemented";
 

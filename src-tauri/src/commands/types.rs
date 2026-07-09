@@ -133,7 +133,7 @@ pub struct SetupActionPreview {
     pub target: Option<SetupActionTarget>,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SetupActionKind {
     VerifyLoader,
@@ -141,6 +141,7 @@ pub enum SetupActionKind {
     EnsureGameDirectory,
     EnsureLauncherProfile,
     SyncResource,
+    RemoveResource,
     WriteServerEntry,
     WriteSetupReceipt,
     ValidateSetup,
@@ -151,6 +152,7 @@ pub enum SetupActionKind {
 pub enum SetupActionIntent {
     Add,
     Update,
+    Remove,
     Verify,
 }
 

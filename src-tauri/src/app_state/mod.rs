@@ -65,6 +65,7 @@ pub struct InstalledServerSnapshot {
 #[derive(Debug, Clone)]
 pub struct InstalledResourceSnapshot {
     pub id: String,
+    pub name: String,
     pub target: ManifestResourceTarget,
     pub source: ManifestResourceSource,
     pub hashes: ManifestResourceHashes,
@@ -122,6 +123,7 @@ impl From<InstalledResourceRecord> for InstalledResourceSnapshot {
     fn from(record: InstalledResourceRecord) -> Self {
         Self {
             id: record.id,
+            name: record.name,
             target: record.target,
             source: record.source,
             hashes: record.hashes,

@@ -111,6 +111,7 @@
     "actionStatus": {
       "add": "Add",
       "update": "Update",
+      "remove": "Remove",
       "verify": "Check",
       "notImplemented": "Planned"
     },
@@ -140,6 +141,10 @@
       "sync_resource": {
         "label": "Add {{subject}}",
         "detail": "Download or update it in {{target}}."
+      },
+      "remove_resource": {
+        "label": "Remove {{subject}}",
+        "detail": "Remove this managed file from {{target}}."
       },
       "write_server_entry": {
         "label": "Add the server",

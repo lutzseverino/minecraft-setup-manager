@@ -111,6 +111,7 @@
     "actionStatus": {
       "add": "Anadir",
       "update": "Actualizar",
+      "remove": "Quitar",
       "verify": "Revisar",
       "notImplemented": "Planeado"
     },
@@ -140,6 +141,10 @@
       "sync_resource": {
         "label": "Anadir {{subject}}",
         "detail": "Lo descarga o actualiza en {{target}}."
+      },
+      "remove_resource": {
+        "label": "Quitar {{subject}}",
+        "detail": "Quita este archivo gestionado de {{target}}."
       },
       "write_server_entry": {
         "label": "Anadir el servidor",

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::app_state::{InstalledResourceSnapshot, InstalledServerSnapshot};
 use crate::commands::{
@@ -135,8 +135,12 @@ fn resource_actions(
     installed: Option<&InstalledServerSnapshot>,
 ) -> Vec<SetupActionPreview> {
     let installed_resources = installed_resource_map(installed);
-
-    selected_resources(manifest, profile)
+    let selected_resources = selected_resources(manifest, profile);
+    let selected_resource_ids = selected_resources
+        .iter()
+        .map(|resource| resource.id.as_str())
+        .collect::<HashSet<_>>();
+    let mut actions = selected_resources
         .into_iter()
         .map(|resource| {
             let installed_resource = installed_resources.get(resource.id.as_str());
@@ -152,7 +156,28 @@ fn resource_actions(
                 target: Some(setup_action_target(resource.target.clone())),
             }
         })
-        .collect()
+        .collect::<Vec<_>>();
+
+    if let Some(installed) = installed {
+        actions.extend(
+            installed
+                .resources
+                .iter()
+                .filter(|resource| !selected_resource_ids.contains(resource.id.as_str()))
+                .map(|resource| SetupActionPreview {
+                    id: format!("remove_resource_{}", resource.id),
+                    kind: SetupActionKind::RemoveResource,
+                    intent: SetupActionIntent::Remove,
+                    status: SetupActionStatus::NotImplemented,
+                    required: false,
+                    resource_id: Some(resource.id.clone()),
+                    subject: Some(resource.name.clone()),
+                    target: Some(setup_action_target(resource.target.clone())),
+                }),
+        );
+    }
+
+    actions
 }
 
 fn installed_resource_map(
@@ -309,6 +334,37 @@ mod tests {
         );
     }
 
+    #[test]
+    fn resource_actions_mark_stale_installed_resources_as_remove() {
+        let manifest = manifest_with_resource(resource(
+            "fabric-api",
+            ManifestResourceSource::Modrinth {
+                project: "fabric-api".to_string(),
+                version: "1.0.0".to_string(),
+            },
+            hashes("abc"),
+        ));
+        let installed = installed_snapshot(vec![installed_resource(
+            "old-map",
+            ManifestResourceSource::Direct {
+                url: "https://example.com/old-map.zip".to_string(),
+            },
+            hashes("old"),
+        )]);
+
+        let actions = build_action_previews(
+            &manifest,
+            &request(),
+            ServerUpdateStatus::UpdateAvailable,
+            Some(&installed),
+        );
+
+        assert_eq!(
+            Some((SetupActionKind::RemoveResource, SetupActionIntent::Remove)),
+            resource_action(&actions, "old-map").map(|action| (action.kind, action.intent))
+        );
+    }
+
     fn resource_action<'a>(
         actions: &'a [SetupActionPreview],
         resource_id: &str,
@@ -381,6 +437,7 @@ mod tests {
     ) -> InstalledResourceSnapshot {
         InstalledResourceSnapshot {
             id: id.to_string(),
+            name: id.to_string(),
             target: ManifestResourceTarget::Mods,
             source,
             hashes,

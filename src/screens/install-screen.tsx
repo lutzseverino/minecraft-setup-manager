@@ -100,6 +100,10 @@ function actionMetaKey(action: SetupActionPreview) {
     return "install.actionStatus.update";
   }
 
+  if (action.intent === "remove") {
+    return "install.actionStatus.remove";
+  }
+
   return "install.actionStatus.add";
 }
 
