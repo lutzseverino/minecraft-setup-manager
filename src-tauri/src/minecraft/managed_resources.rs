@@ -372,8 +372,8 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use crate::commands::{
-        InstallPlan, LauncherKind, PerformanceProfileId, ServerUpdateStatus, SetupActionIntent,
-        SetupActionPreview, SetupActionStatus,
+        InstallPlan, LauncherKind, ServerUpdateStatus, SetupActionIntent, SetupActionPreview,
+        SetupActionStatus,
     };
     use crate::manifest::schema::{
         ManifestInstall, ManifestLoader, ManifestLoaderKind, ManifestMinecraft, ManifestResource,
@@ -583,7 +583,9 @@ mod tests {
             server_name: "Example".to_string(),
             server_address: "play.example.com".to_string(),
             launcher: LauncherKind::Official,
-            profile: PerformanceProfileId::Balanced,
+            profile: "balanced".to_string(),
+            profile_label: "Balanced".to_string(),
+            recommended_memory_mb: 4096,
             actions,
             required_mods: vec![],
             optional_mods: vec![],
@@ -647,6 +649,7 @@ mod tests {
             resource_type: ManifestResourceType::Mod,
             target: ManifestResourceTarget::Mods,
             required: true,
+            profiles: vec![],
             file_name: Some(file_name.to_string()),
             source: ManifestResourceSource::Direct {
                 url: url.to_string(),

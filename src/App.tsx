@@ -5,7 +5,6 @@ import { AppTooltipProvider } from "@/components/app/app-tooltip";
 import { Stepper, StepperStep } from "@/components/app/stepper";
 import {
   fallbackDetections,
-  performanceProfiles,
   wizardSteps,
 } from "@/config/setup-options";
 import "@/i18n";
@@ -53,7 +52,7 @@ export default function App() {
   const [detections, setDetections] =
     useState<LauncherDetection[]>(fallbackDetections);
   const [launcher, setLauncher] = useState<LauncherKind>("official");
-  const [profile, setProfile] = useState<PerformanceProfileId>("balanced");
+  const [profile, setProfile] = useState<PerformanceProfileId>("");
   const [plan, setPlan] = useState<InstallPlan | null>(null);
   const [installProgress, setInstallProgress] = useState<InstallProgress | null>(
     null,
@@ -120,7 +119,13 @@ export default function App() {
       setResolvedServer(nextResolvedServer);
       setServerAddress(nextResolvedServer.server.address);
       setLauncher(nextResolvedServer.server.selectedLauncher);
-      setProfile(nextResolvedServer.server.selectedProfile);
+      const savedProfile = nextResolvedServer.server.selectedProfile;
+      const nextProfile = nextResolvedServer.manifest.profiles.some(
+        (item) => item.id === savedProfile,
+      )
+        ? savedProfile
+        : (nextResolvedServer.manifest.profiles[0]?.id ?? "");
+      setProfile(nextProfile);
       await refreshSavedServers();
     } catch (error) {
       setResolveError(error instanceof Error ? error.message : String(error));
@@ -259,7 +264,7 @@ export default function App() {
               onContinue={buildPlan}
               onProfileChange={setProfile}
               profile={profile}
-              profiles={performanceProfiles}
+              profiles={resolvedServer?.manifest.profiles ?? []}
               server={resolvedServer}
             />
           ) : null}

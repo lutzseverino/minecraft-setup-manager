@@ -50,6 +50,11 @@
     "shaders": {
       "label": "Shaders",
       "detail": "For stronger PCs that can handle nicer lighting."
+    },
+    "dynamic": {
+      "light": "Uses fewer extras for slower computers.",
+      "standard": "A good choice for most computers.",
+      "shaders": "Includes extra visual effects for stronger computers."
     }
   },
   "server": {

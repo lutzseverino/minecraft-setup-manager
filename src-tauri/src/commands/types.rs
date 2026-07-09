@@ -8,14 +8,6 @@ pub enum LauncherKind {
     Manual,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum PerformanceProfileId {
-    LowEnd,
-    Balanced,
-    Shaders,
-}
-
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LauncherDetectionStatus {
@@ -51,7 +43,7 @@ pub enum ValidationStatus {
 pub struct InstallPlanRequest {
     pub server_id: String,
     pub launcher: LauncherKind,
-    pub profile: PerformanceProfileId,
+    pub profile: String,
     pub server_address: String,
 }
 
@@ -71,7 +63,7 @@ pub struct SavedServerEntry {
     pub last_checked_at: String,
     pub last_installed_at: Option<String>,
     pub selected_launcher: LauncherKind,
-    pub selected_profile: PerformanceProfileId,
+    pub selected_profile: String,
     pub installed_manifest_version: Option<String>,
     pub installed_manifest_fingerprint: Option<String>,
 }
@@ -113,7 +105,9 @@ pub struct InstallPlan {
     pub server_name: String,
     pub server_address: String,
     pub launcher: LauncherKind,
-    pub profile: PerformanceProfileId,
+    pub profile: String,
+    pub profile_label: String,
+    pub recommended_memory_mb: u32,
     pub actions: Vec<SetupActionPreview>,
     pub required_mods: Vec<String>,
     pub optional_mods: Vec<String>,

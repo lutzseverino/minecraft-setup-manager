@@ -4,7 +4,6 @@ mod http_client;
 mod launcher;
 mod manifest;
 mod minecraft;
-mod performance_profiles;
 mod planner;
 mod server;
 mod setup;

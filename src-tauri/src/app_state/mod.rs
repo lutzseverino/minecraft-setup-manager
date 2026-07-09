@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
-use crate::commands::{LauncherKind, PerformanceProfileId, SavedServerEntry};
+use crate::commands::{LauncherKind, SavedServerEntry};
 use crate::manifest::schema::{
     ManifestResourceHashes, ManifestResourceSource, ManifestResourceTarget, SetupManifest,
 };
@@ -32,7 +32,7 @@ struct SavedServerRecord {
     last_checked_at: String,
     last_installed_at: Option<String>,
     selected_launcher: LauncherKind,
-    selected_profile: PerformanceProfileId,
+    selected_profile: String,
     game_dir: Option<PathBuf>,
     installed: Option<InstalledManifestRecord>,
 }
@@ -137,7 +137,7 @@ impl From<InstalledResourceRecord> for InstalledResourceSnapshot {
 pub fn record_installed_server(
     server_id: &str,
     selected_launcher: LauncherKind,
-    selected_profile: PerformanceProfileId,
+    selected_profile: &str,
     game_dir: PathBuf,
     manifest: &SetupManifest,
     manifest_fingerprint: &str,
@@ -153,7 +153,7 @@ pub fn record_installed_server(
     record.display_name = manifest.display_name.clone();
     record.last_installed_at = Some(now);
     record.selected_launcher = selected_launcher;
-    record.selected_profile = selected_profile;
+    record.selected_profile = selected_profile.to_string();
     record.game_dir = Some(game_dir);
     record.installed = Some(InstalledManifestRecord {
         manifest_id: manifest.id.clone(),
@@ -177,12 +177,20 @@ pub fn upsert_checked_server(
     let mut state = read_state()?;
     let now = timestamp();
     let id = server_key(address, &manifest.id);
+    let default_profile = default_profile_id(manifest)?.to_string();
 
     if let Some(record) = state.servers.iter_mut().find(|server| server.id == id) {
         record.address = address.to_string();
         record.manifest_url = manifest_url.to_string();
         record.display_name = manifest.display_name.clone();
         record.last_checked_at = now;
+        if !manifest
+            .profiles
+            .iter()
+            .any(|profile| profile.id == record.selected_profile)
+        {
+            record.selected_profile = default_profile;
+        }
         let entry = record.clone().into();
         write_state(&state)?;
         return Ok(entry);
@@ -197,7 +205,7 @@ pub fn upsert_checked_server(
         last_checked_at: now,
         last_installed_at: None,
         selected_launcher: LauncherKind::Official,
-        selected_profile: PerformanceProfileId::Balanced,
+        selected_profile: default_profile,
         game_dir: None,
         installed: None,
     };
@@ -264,7 +272,7 @@ fn timestamp() -> String {
 
 fn installed_resource_records(
     manifest: &SetupManifest,
-    profile: PerformanceProfileId,
+    profile: &str,
 ) -> Vec<InstalledResourceRecord> {
     crate::manifest::selected_resources(manifest, profile)
         .into_iter()
@@ -277,6 +285,14 @@ fn installed_resource_records(
             hashes: resource.hashes.clone(),
         })
         .collect()
+}
+
+fn default_profile_id(manifest: &SetupManifest) -> Result<&str, String> {
+    manifest
+        .profiles
+        .first()
+        .map(|profile| profile.id.as_str())
+        .ok_or_else(|| "The server setup does not provide any setup options.".to_string())
 }
 
 impl From<SavedServerRecord> for SavedServerEntry {

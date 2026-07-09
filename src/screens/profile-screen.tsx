@@ -12,14 +12,18 @@ import {
   AppToggleGroupItem,
 } from "@/components/app/app-toggle-group";
 import { ScreenShell } from "@/components/app/screen-shell";
-import type { PerformanceProfileOption } from "@/config/setup-options";
-import type { PerformanceProfileId, ResolvedServerManifest } from "@/lib/types";
+import { profileIcon } from "@/config/setup-options";
+import type {
+  ManifestPerformanceProfile,
+  PerformanceProfileId,
+  ResolvedServerManifest,
+} from "@/lib/types";
 
 type ProfileScreenProps = Readonly<{
   onContinue: () => void;
   onProfileChange: (profile: PerformanceProfileId) => void;
   profile: PerformanceProfileId;
-  profiles: PerformanceProfileOption[];
+  profiles: ManifestPerformanceProfile[];
   server: ResolvedServerManifest | null;
 }>;
 
@@ -35,14 +39,18 @@ export function ProfileScreen({
 
   return (
     <ScreenShell
-      actions={<AppButton onClick={onContinue}>{t("profile.continue")}</AppButton>}
+      actions={
+        <AppButton disabled={!profile} onClick={onContinue}>
+          {t("profile.continue")}
+        </AppButton>
+      }
       eyebrow={t("profile.eyebrow")}
       lead={t("profile.lead", { server: serverName })}
       title={t("profile.title")}
     >
       <div className="grid gap-4">
         <AppToggleGroup
-          className="grid w-full auto-rows-fr items-stretch gap-3 sm:grid-cols-3"
+          className="grid w-full auto-rows-fr items-stretch gap-3 sm:grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]"
           onValueChange={(value) => {
             if (value) {
               onProfileChange(value as PerformanceProfileId);
@@ -52,7 +60,7 @@ export function ProfileScreen({
           value={profile}
         >
           {profiles.map((item) => {
-            const Icon = item.Icon;
+            const Icon = profileIcon(item);
 
             return (
               <AppToggleGroupItem
@@ -64,13 +72,13 @@ export function ProfileScreen({
                 <span className="flex h-full w-full flex-col items-start gap-3">
                   <Icon className="size-5" />
                   <span className="text-sm font-semibold">
-                    {t(item.labelKey)}
+                    {item.label}
                   </span>
                   <span
                     className="text-sm font-normal text-muted-foreground"
                     data-slot="choice-copy"
                   >
-                    {t(item.detailKey)}
+                    {t(profileDetailKey(item))}
                   </span>
                   <span
                     className="mt-auto pt-1 font-mono text-[0.68rem] leading-none tracking-[0.16em] text-muted-foreground uppercase"
@@ -104,4 +112,16 @@ export function ProfileScreen({
       </div>
     </ScreenShell>
   );
+}
+
+function profileDetailKey(profile: ManifestPerformanceProfile) {
+  if (profile.includesShaders) {
+    return "profiles.dynamic.shaders";
+  }
+
+  if (profile.recommendedMemoryMb <= 3072) {
+    return "profiles.dynamic.light";
+  }
+
+  return "profiles.dynamic.standard";
 }

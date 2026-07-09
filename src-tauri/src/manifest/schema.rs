@@ -71,6 +71,8 @@ pub struct ManifestResource {
     pub target: ManifestResourceTarget,
     #[serde(default)]
     pub required: bool,
+    #[serde(default)]
+    pub profiles: Vec<String>,
     pub file_name: Option<String>,
     pub source: ManifestResourceSource,
     #[serde(default)]

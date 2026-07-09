@@ -24,15 +24,18 @@ Current implementation:
 - Saves server entries in app state.
 - Discovers manifests from `https://<host>/.well-known/minecraft-setup-manager/manifest.json`.
 - Parses and fingerprints setup manifests.
+- Uses server-defined setup profiles and explicit resource membership.
 - Builds setup plans from saved manifests.
 - Creates the managed game folder and setup receipt.
 - Creates or updates the official Minecraft Launcher profile.
+- Downloads direct resources with size limits and SHA-256/SHA-512 verification.
+- Removes stale managed resources when their recorded file is still safe to manage.
 - Validates the local setup slice.
 
 Not implemented yet:
 
 - Fabric installation.
-- Mod/resource download and hash repair.
+- Modrinth resource resolution and downloads.
 - `servers.dat` writes.
 - Signed manifests.
 - Plugin-assisted server compatibility checks.
@@ -81,6 +84,9 @@ https://play.example.com/.well-known/minecraft-setup-manager/manifest.json
 Direct manifest URLs are also accepted by the resolver.
 
 Server-specific manifests should live outside this generic app repository.
+Profiles and their resource sets are also manifest data: each resource can list
+the profile IDs that should receive it. Resources without a profile list apply
+to every profile.
 
 ## Architecture
 

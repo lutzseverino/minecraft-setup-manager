@@ -2,8 +2,8 @@ use std::collections::{HashMap, HashSet};
 
 use crate::app_state::{InstalledResourceSnapshot, InstalledServerSnapshot};
 use crate::commands::{
-    InstallPlanRequest, LauncherKind, PerformanceProfileId, ServerUpdateStatus, SetupActionIntent,
-    SetupActionKind, SetupActionPreview, SetupActionStatus,
+    InstallPlanRequest, LauncherKind, ServerUpdateStatus, SetupActionIntent, SetupActionKind,
+    SetupActionPreview, SetupActionStatus,
 };
 use crate::manifest::schema::{ManifestLoaderKind, ManifestResource, SetupManifest};
 use crate::manifest::selected_resources;
@@ -67,7 +67,7 @@ pub fn build_action_previews(
         file_name: None,
     });
 
-    actions.extend(resource_actions(manifest, request.profile, installed));
+    actions.extend(resource_actions(manifest, &request.profile, installed));
 
     if let Some(server_entry) = &manifest.server_entry {
         actions.push(SetupActionPreview {
@@ -163,7 +163,7 @@ fn loader_actions(
 
 fn resource_actions(
     manifest: &SetupManifest,
-    profile: PerformanceProfileId,
+    profile: &str,
     installed: Option<&InstalledServerSnapshot>,
 ) -> Vec<SetupActionPreview> {
     let installed_resources = installed_resource_map(installed);
@@ -461,7 +461,7 @@ mod tests {
         InstallPlanRequest {
             server_id: "example".to_string(),
             launcher: LauncherKind::Official,
-            profile: PerformanceProfileId::Balanced,
+            profile: "balanced".to_string(),
             server_address: "play.example.com".to_string(),
         }
     }
@@ -476,7 +476,9 @@ mod tests {
             server_name: "Example".to_string(),
             server_address: "play.example.com".to_string(),
             launcher: LauncherKind::Official,
-            profile: PerformanceProfileId::Balanced,
+            profile: "balanced".to_string(),
+            profile_label: "Balanced".to_string(),
+            recommended_memory_mb: 4096,
             actions,
             required_mods: vec![],
             optional_mods: vec![],
@@ -522,6 +524,7 @@ mod tests {
             resource_type: ManifestResourceType::Mod,
             target: ManifestResourceTarget::Mods,
             required: true,
+            profiles: vec![],
             file_name: Some(format!("{id}.jar")),
             source,
             hashes,

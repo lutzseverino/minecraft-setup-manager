@@ -8,8 +8,9 @@ TypeScript frontend.
 - `src/screens/` owns wizard composition and UI state.
 - `src/components/ui/` owns foundational shadcn/Radix-style primitives.
 - `src/components/app/` owns composed app UI pieces.
-- `src/config/` owns generic setup UI options, such as launcher display metadata
-  and performance profile choices.
+- `src/config/` owns generic setup UI metadata, such as launcher display details
+  and local icon choices. Setup profiles and resource membership come from the
+  server manifest.
 - `src/lib/types.ts` defines frontend command contracts.
 - `src/lib/tauri.ts` is the only frontend module that imports Tauri APIs.
 - `src-tauri/src/commands/` owns thin Tauri command handlers and shared DTOs.
@@ -21,7 +22,6 @@ TypeScript frontend.
 - `src-tauri/src/minecraft/` owns local install preparation, Fabric, Modrinth,
   server entry, file repair, and validation modules.
 - `src-tauri/src/system/` owns platform path helpers.
-- `src-tauri/src/performance_profiles/` owns local RAM/performance profile decisions.
 
 ## Dependency Direction
 
@@ -46,10 +46,11 @@ mutation.
 
 ## Current Implementation State
 
-The app currently resolves and stores server manifests, builds setup plans from
-saved manifests, creates the isolated game folder, writes a setup receipt,
-creates or updates the official Minecraft Launcher profile, validates those
-local files and launcher settings, and exports a small report.
+The app currently resolves and stores server manifests, consumes manifest-defined
+setup profiles, builds setup plans from saved manifests, creates the isolated
+game folder, syncs hash-pinned direct resources, writes a setup receipt, creates
+or updates the official Minecraft Launcher profile, validates those local files
+and launcher settings, and exports a small report.
 
 Fabric download/install, Modrinth file resolution, SKlauncher profile writes,
 manifest signing, and `servers.dat` writes remain backend-owned modules with

@@ -312,7 +312,7 @@ mod tests {
     use serde_json::json;
 
     use super::*;
-    use crate::commands::{InstallPlan, LauncherKind, PerformanceProfileId, ServerUpdateStatus};
+    use crate::commands::{InstallPlan, LauncherKind, ServerUpdateStatus};
 
     static ENV_LOCK: Mutex<()> = Mutex::new(());
 
@@ -455,7 +455,9 @@ mod tests {
             server_name: "Example Server".to_string(),
             server_address: "play.example.com".to_string(),
             launcher: LauncherKind::Official,
-            profile: PerformanceProfileId::Balanced,
+            profile: "balanced".to_string(),
+            profile_label: "Balanced".to_string(),
+            recommended_memory_mb: 4096,
             update_status: ServerUpdateStatus::NewSetup,
             actions: vec![],
             required_mods: vec![],

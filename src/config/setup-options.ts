@@ -10,18 +10,9 @@ import {
 import type {
   LauncherDetection,
   LauncherKind,
-  PerformanceProfileId,
+  ManifestPerformanceProfile,
   WizardStepId,
 } from "@/lib/types";
-
-export type PerformanceProfileOption = Readonly<{
-  id: PerformanceProfileId;
-  Icon: typeof GaugeIcon;
-  labelKey: string;
-  detailKey: string;
-  recommendedMemoryMb: number;
-  includesShaders: boolean;
-}>;
 
 export const wizardSteps = [
   { id: "server", labelKey: "steps.server" },
@@ -53,33 +44,6 @@ export const launcherOptions = {
   { Icon: typeof BlocksIcon; labelKey: string; detailKey: string }
 >;
 
-export const performanceProfiles = [
-  {
-    id: "low_end",
-    Icon: GaugeIcon,
-    labelKey: "profiles.lowEnd.label",
-    detailKey: "profiles.lowEnd.detail",
-    recommendedMemoryMb: 3072,
-    includesShaders: false,
-  },
-  {
-    id: "balanced",
-    Icon: MonitorIcon,
-    labelKey: "profiles.balanced.label",
-    detailKey: "profiles.balanced.detail",
-    recommendedMemoryMb: 4096,
-    includesShaders: false,
-  },
-  {
-    id: "shaders",
-    Icon: SparklesIcon,
-    labelKey: "profiles.shaders.label",
-    detailKey: "profiles.shaders.detail",
-    recommendedMemoryMb: 6144,
-    includesShaders: true,
-  },
-] satisfies PerformanceProfileOption[];
-
 export const fallbackDetections = [
   {
     kind: "official",
@@ -101,18 +65,14 @@ export const fallbackDetections = [
   },
 ] satisfies LauncherDetection[];
 
-export function getOptionalModNames(
-  profile: PerformanceProfileId,
-  balancedExtras: string[],
-  shadersExtras: string[],
-) {
-  if (profile === "low_end") {
-    return ["Dynamic FPS", "Entity Culling", "FerriteCore"];
+export function profileIcon(profile: ManifestPerformanceProfile) {
+  if (profile.includesShaders) {
+    return SparklesIcon;
   }
 
-  if (profile === "shaders") {
-    return [...balancedExtras, ...shadersExtras];
+  if (profile.recommendedMemoryMb <= 3072) {
+    return GaugeIcon;
   }
 
-  return balancedExtras;
+  return MonitorIcon;
 }

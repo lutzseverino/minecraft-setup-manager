@@ -2,9 +2,11 @@
 
 1. Add semantic manifest validation and schema-version migration rules.
 2. Replace string setup steps with typed setup actions and a pure planner.
-3. Record verified local resource file hashes after downloads.
-4. Add update and repair previews: add, replace, remove managed files, leave user
-   files alone.
+3. Record verified local resource file hashes after downloads. Direct resources
+   are supported; resolved Modrinth files remain.
+4. Add update and repair previews: add, replace, and remove managed files while
+   leaving user files alone. Preview and direct-file execution are in place;
+   modified-file removal protection remains.
 5. Implement Fabric loader installation through a loader adapter.
 6. Resolve Modrinth pinned files, hashes, and compatibility constraints.
 7. Download resources into managed folders with hash verification and temp-file

@@ -1,6 +1,6 @@
 export type LauncherKind = "official" | "sklauncher" | "manual";
 
-export type PerformanceProfileId = "low_end" | "balanced" | "shaders";
+export type PerformanceProfileId = string;
 
 export type WizardStepId =
   | "server"
@@ -28,12 +28,11 @@ export type LauncherDetection = Readonly<{
   confidence: number;
 }>;
 
-export type PerformanceProfile = Readonly<{
-  id: PerformanceProfileId;
-  labelKey: string;
-  detailKey: string;
+export type ManifestPerformanceProfile = Readonly<{
+  id: string;
+  label: string;
   recommendedMemoryMb: number;
-  includesShaders: boolean;
+  includesShaders?: boolean;
 }>;
 
 export type InstallPlanRequest = Readonly<{
@@ -65,18 +64,14 @@ export type SetupManifest = Readonly<{
     gameDirectoryName: string;
     launcherProfileName: string;
   };
-  profiles: Array<{
-    id: string;
-    label: string;
-    recommendedMemoryMb: number;
-    includesShaders?: boolean;
-  }>;
+  profiles: ManifestPerformanceProfile[];
   resources: Array<{
     id: string;
     name: string;
     resourceType: "mod" | "resource_pack" | "shader_pack" | "config";
     target: "mods" | "resourcepacks" | "shaderpacks" | "config";
     required: boolean;
+    profiles?: string[];
     fileName?: string | null;
     source: Record<string, unknown>;
     hashes?: Record<string, string>;
@@ -126,6 +121,8 @@ export type InstallPlan = Readonly<{
   serverAddress: string;
   launcher: LauncherKind;
   profile: PerformanceProfileId;
+  profileLabel: string;
+  recommendedMemoryMb: number;
   actions: SetupActionPreview[];
   requiredMods: string[];
   optionalMods: string[];

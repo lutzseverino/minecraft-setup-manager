@@ -88,7 +88,7 @@ pub fn prepare_local_install(
         fabric_loader_version: &plan.fabric_loader_version,
         game_directory_name: &plan.game_directory_name,
         launcher: format!("{:?}", plan.launcher),
-        performance_profile: format!("{:?}", plan.profile),
+        performance_profile: plan.profile.clone(),
         required_mods: &plan.required_mods,
         optional_mods: &plan.optional_mods,
     };

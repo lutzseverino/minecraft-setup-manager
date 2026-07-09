@@ -5,7 +5,6 @@ pub use types::*;
 use crate::launcher;
 use crate::manifest;
 use crate::minecraft;
-use crate::performance_profiles;
 use crate::planner;
 use crate::server;
 use crate::setup;
@@ -47,40 +46,27 @@ pub fn resolve_server_manifest(
 pub fn get_install_plan(request: InstallPlanRequest) -> Result<InstallPlan, String> {
     let server = crate::app_state::saved_server_entry(&request.server_id)?;
     let (manifest, manifest_fingerprint) = saved_manifest(&server)?;
-    let profile = performance_profiles::resolve_profile(&request.profile);
     let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
     let installed = crate::app_state::installed_server_snapshot(&request.server_id)?;
 
-    Ok(manifest::build_install_plan(
-        &manifest,
-        &request,
-        profile,
-        update_status,
-        installed.as_ref(),
-    ))
+    manifest::build_install_plan(&manifest, &request, update_status, installed.as_ref())
 }
 
 #[tauri::command]
 pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, String> {
     let server = crate::app_state::saved_server_entry(&request.server_id)?;
     let (manifest, manifest_fingerprint) = saved_manifest(&server)?;
-    let profile = performance_profiles::resolve_profile(&request.profile);
     let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
     let installed = crate::app_state::installed_server_snapshot(&request.server_id)?;
-    let plan = manifest::build_install_plan(
-        &manifest,
-        &request,
-        profile,
-        update_status,
-        installed.as_ref(),
-    );
+    let plan =
+        manifest::build_install_plan(&manifest, &request, update_status, installed.as_ref())?;
     planner::ensure_plan_is_supported(&plan)?;
     let client_setup = setup::prepare_client(&plan, &manifest)?;
     let log = minecraft::install_log(&plan, &client_setup);
     crate::app_state::record_installed_server(
         &request.server_id,
         request.launcher,
-        request.profile,
+        &request.profile,
         client_setup.local_install.game_dir.clone(),
         &manifest,
         &manifest_fingerprint,
@@ -196,7 +182,7 @@ mod tests {
             last_installed_at: installed_manifest_version
                 .map(|_| "2026-07-09T00:00:00Z".to_string()),
             selected_launcher: LauncherKind::Official,
-            selected_profile: PerformanceProfileId::Balanced,
+            selected_profile: "balanced".to_string(),
             installed_manifest_version: installed_manifest_version.map(str::to_string),
             installed_manifest_fingerprint: installed_manifest_fingerprint.map(str::to_string),
         }

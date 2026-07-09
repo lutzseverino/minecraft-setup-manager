@@ -10,10 +10,7 @@ import {
 } from "@/components/app/app-card";
 import { ScreenShell } from "@/components/app/screen-shell";
 import { StatusRow } from "@/components/app/status-row";
-import {
-  launcherOptions,
-  performanceProfiles,
-} from "@/config/setup-options";
+import { launcherOptions } from "@/config/setup-options";
 import type { DiagnosticBundle, InstallPlan } from "@/lib/types";
 
 type DoneScreenProps = Readonly<{
@@ -30,9 +27,6 @@ export function DoneScreen({
   plan,
 }: DoneScreenProps) {
   const { t } = useTranslation();
-  const selectedProfile = performanceProfiles.find(
-    (item) => item.id === (plan?.profile ?? "balanced"),
-  );
   const selectedLauncher = launcherOptions[plan?.launcher ?? "official"];
 
   return (
@@ -56,7 +50,7 @@ export function DoneScreen({
       <div className="grid gap-4">
         <StatusRow
           detail={t("done.summary.detail", {
-            profile: selectedProfile ? t(selectedProfile.labelKey) : "",
+            profile: plan?.profileLabel ?? "",
             launcher: t(selectedLauncher.labelKey),
           })}
           label={t("done.summary.label")}

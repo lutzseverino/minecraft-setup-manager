@@ -64,6 +64,7 @@ const demoManifest = {
       resourceType: "mod",
       target: "mods",
       required: true,
+      profiles: ["balanced"],
       fileName: "fabric-api.jar",
       source: { kind: "modrinth", project: "fabric-api", version: "demo" },
       hashes: {},
@@ -150,6 +151,12 @@ export async function getInstallPlan(request: InstallPlanRequest) {
       serverAddress: request.serverAddress || demoManifest.server.address,
       launcher: request.launcher,
       profile: request.profile,
+      profileLabel:
+        demoManifest.profiles.find((profile) => profile.id === request.profile)
+          ?.label ?? demoManifest.profiles[0].label,
+      recommendedMemoryMb:
+        demoManifest.profiles.find((profile) => profile.id === request.profile)
+          ?.recommendedMemoryMb ?? demoManifest.profiles[0].recommendedMemoryMb,
       actions: [
         {
           id: "fabric_version",
