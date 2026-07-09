@@ -32,7 +32,7 @@ pub fn resolve_server_manifest(
         &manifest,
         &manifest_fingerprint,
     )?;
-    let update_status = update_status_for(&server, &manifest);
+    let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
 
     Ok(ResolvedServerManifest {
         server,
@@ -45,9 +45,9 @@ pub fn resolve_server_manifest(
 #[tauri::command]
 pub fn get_install_plan(request: InstallPlanRequest) -> Result<InstallPlan, String> {
     let server = crate::app_state::saved_server_entry(&request.server_id)?;
-    let (manifest, _) = saved_manifest(&server)?;
+    let (manifest, manifest_fingerprint) = saved_manifest(&server)?;
     let profile = performance_profiles::resolve_profile(&request.profile);
-    let update_status = update_status_for(&server, &manifest);
+    let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
 
     Ok(manifest::build_install_plan(
         &manifest,
@@ -62,7 +62,7 @@ pub fn start_install(request: InstallPlanRequest) -> Result<InstallProgress, Str
     let server = crate::app_state::saved_server_entry(&request.server_id)?;
     let (manifest, manifest_fingerprint) = saved_manifest(&server)?;
     let profile = performance_profiles::resolve_profile(&request.profile);
-    let update_status = update_status_for(&server, &manifest);
+    let update_status = update_status_for(&server, &manifest, &manifest_fingerprint);
     let plan = manifest::build_install_plan(&manifest, &request, profile, update_status);
     let client_setup = setup::prepare_client(&plan)?;
     let log = minecraft::install_log(&plan, &client_setup);
@@ -112,10 +112,109 @@ fn saved_manifest(
 fn update_status_for(
     server: &SavedServerEntry,
     manifest: &manifest::schema::SetupManifest,
+    manifest_fingerprint: &str,
 ) -> ServerUpdateStatus {
-    match &server.installed_manifest_version {
-        Some(version) if version == &manifest.manifest_version => ServerUpdateStatus::UpToDate,
-        Some(_) => ServerUpdateStatus::UpdateAvailable,
-        None => ServerUpdateStatus::NewSetup,
+    match (
+        &server.installed_manifest_version,
+        &server.installed_manifest_fingerprint,
+    ) {
+        (Some(_), Some(fingerprint)) if fingerprint == manifest_fingerprint => {
+            ServerUpdateStatus::UpToDate
+        }
+        (Some(version), None) if version == &manifest.manifest_version => {
+            ServerUpdateStatus::UpToDate
+        }
+        (Some(_), _) => ServerUpdateStatus::UpdateAvailable,
+        (None, _) => ServerUpdateStatus::NewSetup,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::manifest::schema::{
+        ManifestInstall, ManifestLoader, ManifestLoaderKind, ManifestMinecraft, ManifestServer,
+        SetupManifest,
+    };
+
+    #[test]
+    fn update_status_uses_manifest_fingerprint_when_available() {
+        let server = saved_server(Some("1"), Some("sha256:old"));
+        let manifest = manifest("1");
+
+        assert_eq!(
+            ServerUpdateStatus::UpdateAvailable,
+            update_status_for(&server, &manifest, "sha256:new")
+        );
+    }
+
+    #[test]
+    fn update_status_keeps_old_version_only_records_compatible() {
+        let server = saved_server(Some("1"), None);
+        let manifest = manifest("1");
+
+        assert_eq!(
+            ServerUpdateStatus::UpToDate,
+            update_status_for(&server, &manifest, "sha256:new")
+        );
+    }
+
+    #[test]
+    fn update_status_marks_missing_install_as_new_setup() {
+        let server = saved_server(None, None);
+        let manifest = manifest("1");
+
+        assert_eq!(
+            ServerUpdateStatus::NewSetup,
+            update_status_for(&server, &manifest, "sha256:new")
+        );
+    }
+
+    fn saved_server(
+        installed_manifest_version: Option<&str>,
+        installed_manifest_fingerprint: Option<&str>,
+    ) -> SavedServerEntry {
+        SavedServerEntry {
+            id: "example".to_string(),
+            address: "play.example.com".to_string(),
+            manifest_url:
+                "https://play.example.com/.well-known/minecraft-setup-manager/manifest.json"
+                    .to_string(),
+            display_name: "Example".to_string(),
+            last_checked_at: "2026-07-09T00:00:00Z".to_string(),
+            last_installed_at: installed_manifest_version
+                .map(|_| "2026-07-09T00:00:00Z".to_string()),
+            selected_launcher: LauncherKind::Official,
+            selected_profile: PerformanceProfileId::Balanced,
+            installed_manifest_version: installed_manifest_version.map(str::to_string),
+            installed_manifest_fingerprint: installed_manifest_fingerprint.map(str::to_string),
+        }
+    }
+
+    fn manifest(version: &str) -> SetupManifest {
+        SetupManifest {
+            schema_version: 1,
+            manifest_version: version.to_string(),
+            id: "example".to_string(),
+            display_name: "Example".to_string(),
+            server: ManifestServer {
+                name: "Example".to_string(),
+                address: "play.example.com".to_string(),
+            },
+            minecraft: ManifestMinecraft {
+                version: "1.21.6".to_string(),
+                loader: ManifestLoader {
+                    kind: ManifestLoaderKind::None,
+                    version: None,
+                },
+            },
+            install: ManifestInstall {
+                game_directory_name: "Example".to_string(),
+                launcher_profile_name: "Example".to_string(),
+            },
+            profiles: vec![],
+            resources: vec![],
+            server_entry: None,
+        }
     }
 }

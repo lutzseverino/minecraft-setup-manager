@@ -6,7 +6,9 @@ use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
 use crate::commands::{LauncherKind, PerformanceProfileId, SavedServerEntry};
-use crate::manifest::schema::SetupManifest;
+use crate::manifest::schema::{
+    ManifestResourceHashes, ManifestResourceSource, ManifestResourceTarget, SetupManifest,
+};
 use crate::server::address::server_key;
 use crate::system::{paths, APP_SUPPORT_NAME};
 
@@ -41,6 +43,18 @@ struct InstalledManifestRecord {
     manifest_id: String,
     manifest_version: String,
     manifest_fingerprint: String,
+    #[serde(default)]
+    resources: Vec<InstalledResourceRecord>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct InstalledResourceRecord {
+    id: String,
+    name: String,
+    target: ManifestResourceTarget,
+    source: ManifestResourceSource,
+    hashes: ManifestResourceHashes,
 }
 
 pub fn list_saved_servers() -> Result<Vec<SavedServerEntry>, String> {
@@ -96,7 +110,9 @@ pub fn record_installed_server(
         manifest_id: manifest.id.clone(),
         manifest_version: manifest.manifest_version.clone(),
         manifest_fingerprint: manifest_fingerprint.to_string(),
+        resources: installed_resource_records(manifest, selected_profile),
     });
+    state.schema_version = 2;
     let entry = record.clone().into();
     write_state(&state)?;
 
@@ -197,8 +213,26 @@ fn timestamp() -> String {
         .unwrap_or_else(|_| "1970-01-01T00:00:00Z".to_string())
 }
 
+fn installed_resource_records(
+    manifest: &SetupManifest,
+    profile: PerformanceProfileId,
+) -> Vec<InstalledResourceRecord> {
+    crate::manifest::selected_resources(manifest, profile)
+        .into_iter()
+        .map(|resource| InstalledResourceRecord {
+            id: resource.id.clone(),
+            name: resource.name.clone(),
+            target: resource.target.clone(),
+            source: resource.source.clone(),
+            hashes: resource.hashes.clone(),
+        })
+        .collect()
+}
+
 impl From<SavedServerRecord> for SavedServerEntry {
     fn from(record: SavedServerRecord) -> Self {
+        let installed = record.installed;
+
         Self {
             id: record.id,
             address: record.address,
@@ -208,9 +242,12 @@ impl From<SavedServerRecord> for SavedServerEntry {
             last_installed_at: record.last_installed_at,
             selected_launcher: record.selected_launcher,
             selected_profile: record.selected_profile,
-            installed_manifest_version: record
-                .installed
-                .map(|installed| installed.manifest_version),
+            installed_manifest_version: installed
+                .as_ref()
+                .map(|installed| installed.manifest_version.clone()),
+            installed_manifest_fingerprint: installed
+                .as_ref()
+                .map(|installed| installed.manifest_fingerprint.clone()),
         }
     }
 }

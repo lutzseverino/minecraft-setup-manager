@@ -2,9 +2,8 @@ use crate::commands::{
     InstallPlanRequest, LauncherKind, PerformanceProfileId, ServerUpdateStatus, SetupActionIntent,
     SetupActionKind, SetupActionPreview, SetupActionStatus, SetupActionTarget,
 };
-use crate::manifest::schema::{
-    ManifestLoaderKind, ManifestResource, ManifestResourceTarget, SetupManifest,
-};
+use crate::manifest::schema::{ManifestLoaderKind, ManifestResourceTarget, SetupManifest};
+use crate::manifest::selected_resources;
 
 pub fn build_action_previews(
     manifest: &SetupManifest,
@@ -151,24 +150,6 @@ fn setup_action_target(target: ManifestResourceTarget) -> SetupActionTarget {
         ManifestResourceTarget::Shaderpacks => SetupActionTarget::Shaderpacks,
         ManifestResourceTarget::Config => SetupActionTarget::Config,
     }
-}
-
-fn selected_resources(
-    manifest: &SetupManifest,
-    profile: PerformanceProfileId,
-) -> Vec<&ManifestResource> {
-    manifest
-        .resources
-        .iter()
-        .filter(|resource| {
-            resource.required
-                || match profile {
-                    PerformanceProfileId::LowEnd => false,
-                    PerformanceProfileId::Balanced => !resource.id.contains("shader"),
-                    PerformanceProfileId::Shaders => true,
-                }
-        })
-        .collect()
 }
 
 fn launcher_action_status(launcher: LauncherKind) -> SetupActionStatus {

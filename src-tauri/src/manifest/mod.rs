@@ -3,7 +3,9 @@ pub mod fingerprint;
 pub mod schema;
 
 use crate::commands::{InstallPlan, InstallPlanRequest, PerformanceProfileId, ServerUpdateStatus};
-use crate::manifest::schema::{ManifestLoaderKind, ManifestResourceTarget, SetupManifest};
+use crate::manifest::schema::{
+    ManifestLoaderKind, ManifestResource, ManifestResourceTarget, SetupManifest,
+};
 use crate::performance_profiles::PerformanceProfile;
 use crate::planner;
 
@@ -62,6 +64,24 @@ pub fn build_install_plan(
             ),
         ],
     }
+}
+
+pub fn selected_resources(
+    manifest: &SetupManifest,
+    profile: PerformanceProfileId,
+) -> Vec<&ManifestResource> {
+    manifest
+        .resources
+        .iter()
+        .filter(|resource| {
+            resource.required
+                || match profile {
+                    PerformanceProfileId::LowEnd => false,
+                    PerformanceProfileId::Balanced => !resource.id.contains("shader"),
+                    PerformanceProfileId::Shaders => true,
+                }
+        })
+        .collect()
 }
 
 fn optional_mods_for_profile(

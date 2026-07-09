@@ -117,6 +117,7 @@ export async function resolveServerManifest(
     selectedLauncher: "official",
     selectedProfile: "balanced",
     installedManifestVersion: null,
+    installedManifestFingerprint: null,
   } satisfies SavedServerEntry;
 
   return invokeOrFallback<ResolvedServerManifest>(

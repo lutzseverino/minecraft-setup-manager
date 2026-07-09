@@ -2,7 +2,7 @@
 
 1. Add semantic manifest validation and schema-version migration rules.
 2. Replace string setup steps with typed setup actions and a pure planner.
-3. Persist installed manifest fingerprints and resource fingerprints after apply.
+3. Record verified local resource file hashes after downloads.
 4. Add update and repair previews: add, replace, remove managed files, leave user
    files alone.
 5. Implement Fabric loader installation through a loader adapter.

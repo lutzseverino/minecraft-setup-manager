@@ -73,6 +73,7 @@ pub struct SavedServerEntry {
     pub selected_launcher: LauncherKind,
     pub selected_profile: PerformanceProfileId,
     pub installed_manifest_version: Option<String>,
+    pub installed_manifest_fingerprint: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -84,7 +85,7 @@ pub struct ResolvedServerManifest {
     pub update_status: ServerUpdateStatus,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ServerUpdateStatus {
     NewSetup,

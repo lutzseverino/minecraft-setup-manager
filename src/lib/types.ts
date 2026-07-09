@@ -96,6 +96,7 @@ export type SavedServerEntry = Readonly<{
   selectedLauncher: LauncherKind;
   selectedProfile: PerformanceProfileId;
   installedManifestVersion: string | null;
+  installedManifestFingerprint: string | null;
 }>;
 
 export type ServerUpdateStatus =
