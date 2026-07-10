@@ -223,3 +223,17 @@ export type DiagnosticBundle = Readonly<{
   path: string;
   summary: string;
 }>;
+
+export type AppUpdateInfo = Readonly<{
+  currentVersion: string;
+  version: string;
+  date: string | null;
+  notes: string | null;
+}>;
+
+export type AppUpdateDownloadProgress = Readonly<{
+  downloadComplete: boolean;
+  downloadedBytes: number;
+  totalBytes: number | null;
+  percent: number | null;
+}>;

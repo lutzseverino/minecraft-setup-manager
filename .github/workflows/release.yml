@@ -6,7 +6,7 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
@@ -51,6 +51,15 @@ jobs:
       - name: Check documentation
         run: npm run check:docs
 
+      - name: Check updater release configuration
+        run: npm run check:updater-config:release
+
+      - name: Test release tooling
+        run: npm run test:scripts
+
+      - name: Test frontend update lifecycle
+        run: npm run test:frontend
+
       - name: Typecheck frontend
         run: npm run typecheck
 
@@ -72,6 +81,9 @@ jobs:
   publish:
     name: Bundle ${{ matrix.name }}
     needs: validate
+    environment: release
+    permissions:
+      contents: write
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -133,27 +145,73 @@ jobs:
         env:
           APPLE_SIGNING_IDENTITY: ${{ startsWith(matrix.os, 'macos-') && '-' || '' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          VITE_APP_UPDATER_ENABLED: "true"
         with:
-          args: ${{ matrix.args }}
+          args: ${{ matrix.args }} --config src-tauri/tauri.release.conf.json
           generateReleaseNotes: true
           prerelease: ${{ startsWith(github.ref_name, 'v0.') }}
           releaseBody: |
-            This is a development release of Minecraft Setup Manager.
+            Native installers and application update artifacts for Minecraft Setup Manager.
 
             > [!WARNING]
-            > These installers are not notarized or signed by a recognized publisher. Only use downloads from this repository and expect an operating-system security prompt.
+            > Updater signatures let an installed copy verify future application updates. They do not replace Apple notarization, Apple Developer ID, or Windows publisher signing. These installers are not notarized or signed by a recognized publisher, so expect an operating-system security prompt.
           releaseDraft: true
           releaseName: Minecraft Setup Manager ${{ github.ref_name }}
           retryAttempts: 2
           tagName: ${{ github.ref_name }}
-          uploadUpdaterJson: false
+          updaterJsonPreferNsis: true
+          uploadUpdaterJson: true
+          uploadUpdaterSignatures: true
 
   finalize:
     name: Publish release
     needs: publish
+    permissions:
+      contents: write
     runs-on: ubuntu-22.04
     steps:
+      - name: Check out repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Install Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          cache: npm
+          node-version: 22
+
+      - name: Install pinned npm
+        run: npm install --global npm@11.6.2
+
+      - name: Install release validation dependencies
+        run: npm ci
+
+      - name: Download and validate updater metadata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/update-release"
+          gh release download "$GITHUB_REF_NAME" --clobber --pattern latest.json --dir "$RUNNER_TEMP/update-release" --repo "$GITHUB_REPOSITORY"
+          gh release download "$GITHUB_REF_NAME" --clobber --pattern "*.sig" --dir "$RUNNER_TEMP/update-release" --repo "$GITHUB_REPOSITORY"
+          gh release download "$GITHUB_REF_NAME" --clobber --pattern "*.app.tar.gz" --dir "$RUNNER_TEMP/update-release" --repo "$GITHUB_REPOSITORY"
+          gh release download "$GITHUB_REF_NAME" --clobber --pattern "*.AppImage" --dir "$RUNNER_TEMP/update-release" --repo "$GITHUB_REPOSITORY"
+          gh release download "$GITHUB_REF_NAME" --clobber --pattern "*.deb" --dir "$RUNNER_TEMP/update-release" --repo "$GITHUB_REPOSITORY"
+          gh release download "$GITHUB_REF_NAME" --clobber --pattern "*-setup.exe" --dir "$RUNNER_TEMP/update-release" --repo "$GITHUB_REPOSITORY"
+          gh release view "$GITHUB_REF_NAME" --json assets,isDraft,isPrerelease,tagName --repo "$GITHUB_REPOSITORY" > "$RUNNER_TEMP/update-release/release.json"
+          node scripts/check-update-release.mjs "$RUNNER_TEMP/update-release/latest.json" "$RUNNER_TEMP/update-release/release.json" "$GITHUB_REF_NAME" "$RUNNER_TEMP/update-release" src-tauri/tauri.release.conf.json
+
       - name: Publish completed release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "$GITHUB_REF_NAME" --draft=false --verify-tag --repo "$GITHUB_REPOSITORY"
+        run: |
+          if [ "$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft --repo "$GITHUB_REPOSITORY")" = "true" ]; then
+            gh release edit "$GITHUB_REF_NAME" --draft=false --verify-tag --repo "$GITHUB_REPOSITORY"
+          else
+            echo "Release $GITHUB_REF_NAME is already public; continuing channel promotion."
+          fi
+
+      - name: Promote application update channel
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/publish-update-channel.mjs "$RUNNER_TEMP/update-release/latest.json"

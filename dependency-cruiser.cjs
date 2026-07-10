@@ -66,9 +66,9 @@ module.exports = {
       name: "tauri-wrapper-is-only-tauri-api-consumer",
       severity: "error",
       comment:
-        "Keep Tauri invoke usage behind src/lib/tauri.ts so command contracts stay typed.",
+        "Keep all Tauri guest APIs behind src/lib/tauri.ts so native contracts stay typed.",
       from: { path: "^src/(?!lib/tauri[.]ts)" },
-      to: { path: "^node_modules/@tauri-apps/api/" },
+      to: { path: "^node_modules/@tauri-apps/" },
     }
   ],
   options: {

@@ -20,6 +20,7 @@ import type {
 
 type InstallScreenProps = Readonly<{
   installProgress: InstallProgress | null;
+  isAppUpdating: boolean;
   isInstalling: boolean;
   isValidating: boolean;
   onContinue: () => void;
@@ -29,6 +30,7 @@ type InstallScreenProps = Readonly<{
 
 export function InstallScreen({
   installProgress,
+  isAppUpdating,
   isInstalling,
   isValidating,
   onContinue,
@@ -46,7 +48,12 @@ export function InstallScreen({
       actions={
         <>
           <AppButton
-            disabled={!plan || unsupportedActions.length > 0 || isInstalling}
+            disabled={
+              !plan ||
+              unsupportedActions.length > 0 ||
+              isInstalling ||
+              isAppUpdating
+            }
             onClick={onInstall}
             variant="outline"
           >
@@ -54,7 +61,7 @@ export function InstallScreen({
             {isInstalling ? t("install.running") : t("install.run")}
           </AppButton>
           <AppButton
-            disabled={!installSucceeded || isValidating}
+            disabled={!installSucceeded || isValidating || isAppUpdating}
             onClick={onContinue}
           >
             {isValidating ? t("install.checking") : t("install.check")}

@@ -30,6 +30,7 @@ Use the [reference template](../_templates/reference.template.md) for new refere
 
 ## Documents
 
+- [Application updates](application-updates.md)
 - [Manifest integration](manifest-integration.md)
 - [Implementation status](implementation-status.md)
 - [Launcher validation](launcher-validation.md)

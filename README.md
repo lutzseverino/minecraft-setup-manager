@@ -14,8 +14,9 @@ updates.
 
 > [!IMPORTANT]
 > The current `0.x` line is a development release. Installers are not yet
-> notarized or signed by a recognized publisher. Only load setup files from
-> servers you trust.
+> notarized or signed by a recognized publisher. Application updates are
+> verified with a separate updater key, but that does not remove operating-system
+> trust warnings. Only load setup files from servers you trust.
 
 ## How It Works
 
@@ -41,6 +42,11 @@ The normal Minecraft Launcher must already be installed.
 Because builds are not yet notarized or publisher-signed, the operating system
 may show a security warning. Do not bypass a warning for a file obtained outside
 this repository.
+
+Updater-enabled desktop builds check for a newer application version in the
+background. They do not download or install it until you review the version and
+choose **Update and restart**. The published `v0.1.3` build predates this support,
+so installing the first updater-enabled release is a one-time manual bootstrap.
 
 ## Server Contract
 

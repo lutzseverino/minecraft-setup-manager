@@ -28,5 +28,6 @@ Use the [how-to template](../_templates/how-to.template.md) for new guides.
 
 ## Guides
 
+- [Publish an application release](publish-a-release.md)
 - [Run the manager locally](run-locally.md)
 - [Validate SKlauncher compatibility](validate-sklauncher.md)

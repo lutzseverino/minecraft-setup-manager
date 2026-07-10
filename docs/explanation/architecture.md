@@ -20,6 +20,8 @@ suite and golden fingerprints must match before a protocol update is accepted.
 ### Responsibility Boundaries
 
 - `src/hooks/` owns wizard orchestration, async command state, and lifecycle resets.
+- `src/hooks/use-app-updater.ts` owns the independent application-update
+  lifecycle; `App.tsx` only coordinates its mutation window with setup work.
 - `src/screens/` owns presentational wizard composition.
 - `src/components/ui/` owns foundational shadcn/Radix-style primitives.
 - `src/components/app/` owns composed app UI pieces.
@@ -28,6 +30,8 @@ suite and golden fingerprints must match before a protocol update is accepted.
   server manifest.
 - `src/lib/types.ts` defines frontend command contracts.
 - `src/lib/tauri.ts` is the only frontend module that imports Tauri APIs.
+- `src-tauri/capabilities/` grants the webview only the native updater and
+  restart operations required by the root update UI.
 - `src-tauri/src/commands/` owns thin Tauri command handlers and shared DTOs.
 - `src-tauri/src/app_state/` owns saved servers and durable update state.
 - `src-tauri/src/server/` owns server address normalization, manifest discovery,
@@ -63,6 +67,11 @@ React screens call typed functions from `src/lib/tauri.ts`. They do not import
 `@tauri-apps/api` directly and do not know filesystem paths or launcher profile
 formats.
 
+The same boundary wraps Tauri plugin guest APIs. React receives plain update
+metadata and normalized progress while `src/lib/tauri.ts` retains the opaque
+native updater resource. The release-only Tauri configuration embeds the update
+channel and public key without requiring signing secrets during ordinary CI.
+
 Server-specific facts come from setup manifests. The frontend may display resolved
 manifest data, but it must not carry server-specific catalogs.
 
@@ -95,6 +104,12 @@ exports a small report.
 When the player enters a setup code, the backend repeats local validation and
 redeems that code against the approved manifest origin. React never submits an
 attestation directly.
+
+Updater-enabled release builds also perform a non-blocking application update
+check.
+The player must consent before download and install. App update installation and
+Minecraft setup mutation are mutually excluded, and the app relaunches only
+after Tauri has verified and installed the signed artifact.
 
 Apply is idempotent and only advances durable installed state after a conformance
 pass verifies the loader version, launcher profile, setup receipt identity,
