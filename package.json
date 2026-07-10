@@ -1,12 +1,13 @@
 {
   "name": "minecraft-setup-manager",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "packageManager": "npm@11.6.2",
   "type": "module",
   "scripts": {
     "build": "tsc -b && vite build",
     "check:architecture": "depcruise --config dependency-cruiser.cjs src",
+    "check:docs": "node scripts/check-docs.mjs",
     "check:version": "node scripts/check-release-version.mjs",
     "dev": "vite",
     "tauri": "tauri",

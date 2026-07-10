@@ -1,13 +1,21 @@
 [package]
 name = "minecraft-setup-manager"
-version = "0.1.1"
+version = "0.1.2"
 description = "Desktop setup manager for Minecraft client setups"
 authors = ["Minecraft Setup Manager contributors"]
 edition = "2021"
 
+[features]
+validation-tools = []
+
 [lib]
 name = "minecraft_setup_manager_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "sklauncher-contract-probe"
+path = "src/bin/sklauncher_contract_probe.rs"
+required-features = ["validation-tools"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

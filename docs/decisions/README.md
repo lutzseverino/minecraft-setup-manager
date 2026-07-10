@@ -30,4 +30,4 @@ Use the [decision template](../_templates/decision.template.md) for new decision
 
 ## Decisions
 
-No decision records are published yet.
+- [Support only verified launcher profile formats](verified-launcher-profile-formats.md)

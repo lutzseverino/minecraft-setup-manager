@@ -1,4 +1,5 @@
 mod manual;
+mod minecraft_profiles;
 mod official_minecraft;
 mod sklauncher;
 
@@ -65,14 +66,16 @@ pub fn detect_launchers() -> Vec<LauncherDetection> {
 pub fn validate_profile_prerequisites(plan: &InstallPlan) -> Result<(), String> {
     match plan.launcher {
         LauncherKind::Official => official_minecraft::validate_profile_prerequisites(plan),
-        LauncherKind::Sklauncher | LauncherKind::Manual => Ok(()),
+        LauncherKind::Sklauncher => sklauncher::validate_profile_prerequisites(plan),
+        LauncherKind::Manual => Ok(()),
     }
 }
 
 pub fn validate_base_prerequisites(plan: &InstallPlan) -> Result<(), String> {
     match plan.launcher {
         LauncherKind::Official => official_minecraft::validate_base_prerequisites(plan),
-        LauncherKind::Sklauncher | LauncherKind::Manual => Ok(()),
+        LauncherKind::Sklauncher => sklauncher::validate_base_prerequisites(plan),
+        LauncherKind::Manual => Ok(()),
     }
 }
 
@@ -82,7 +85,8 @@ pub fn ensure_profile(
 ) -> Result<LauncherProfileResult, String> {
     match plan.launcher {
         LauncherKind::Official => OfficialMinecraftLauncherAdapter.ensure_profile(plan, game_dir),
-        LauncherKind::Sklauncher | LauncherKind::Manual => {
+        LauncherKind::Sklauncher => SklauncherAdapter.ensure_profile(plan, game_dir),
+        LauncherKind::Manual => {
             let version_id = version::installed_version_id(plan);
 
             Ok(LauncherProfileResult {
@@ -104,7 +108,8 @@ pub fn validate_profile(
 ) -> Result<LauncherProfileValidation, String> {
     match plan.launcher {
         LauncherKind::Official => OfficialMinecraftLauncherAdapter.validate_profile(plan, game_dir),
-        LauncherKind::Sklauncher | LauncherKind::Manual => {
+        LauncherKind::Sklauncher => SklauncherAdapter.validate_profile(plan, game_dir),
+        LauncherKind::Manual => {
             let version_id = version::installed_version_id(plan);
             let version_exists = paths::minecraft_version_file(&version_id)
                 .map(|path| path.is_file())

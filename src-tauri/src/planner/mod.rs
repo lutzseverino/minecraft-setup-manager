@@ -61,7 +61,7 @@ pub fn build_action_previews(
         kind: SetupActionKind::EnsureLauncherProfile,
         intent: setup_intent,
         status: launcher_action_status(request.launcher),
-        required: matches!(request.launcher, LauncherKind::Official),
+        required: !matches!(request.launcher, LauncherKind::Manual),
         resource_id: None,
         subject: Some(manifest.install.launcher_profile_name.clone()),
         target: None,
@@ -324,8 +324,8 @@ fn resource_matches_installed(
 
 fn launcher_action_status(launcher: LauncherKind) -> SetupActionStatus {
     match launcher {
-        LauncherKind::Official => SetupActionStatus::Ready,
-        LauncherKind::Sklauncher | LauncherKind::Manual => SetupActionStatus::NotImplemented,
+        LauncherKind::Official | LauncherKind::Sklauncher => SetupActionStatus::Ready,
+        LauncherKind::Manual => SetupActionStatus::NotImplemented,
     }
 }
 
@@ -385,6 +385,30 @@ mod tests {
         }];
 
         assert!(ensure_plan_is_supported(&plan).is_ok());
+    }
+
+    #[test]
+    fn sklauncher_profiles_are_supported_required_actions() {
+        let manifest = manifest_with_resource(resource(
+            "fabric-api",
+            ManifestResourceSource::Modrinth {
+                project: "fabric-api".to_string(),
+                version: "1.0.0".to_string(),
+            },
+            hashes("abc"),
+        ));
+        let mut request = request();
+        request.launcher = LauncherKind::Sklauncher;
+
+        let actions =
+            build_action_previews(&manifest, &request, ServerUpdateStatus::NewSetup, None);
+        let profile = actions
+            .iter()
+            .find(|action| action.kind == SetupActionKind::EnsureLauncherProfile)
+            .expect("launcher profile action");
+
+        assert_eq!(profile.status, SetupActionStatus::Ready);
+        assert!(profile.required);
     }
 
     #[test]

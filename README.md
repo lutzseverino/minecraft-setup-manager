@@ -66,8 +66,9 @@ npm run tauri:dev
 ```
 
 See [run the manager locally](docs/how-to/run-locally.md) for browser mode and
-verification. CI checks TypeScript, dependency direction, synchronized versions,
-the production frontend build, Rust formatting, tests, and strict Clippy.
+verification. CI checks TypeScript, dependency direction, documentation links,
+synchronized versions, the production frontend build, Rust formatting, tests,
+and strict Clippy.
 
 ## Documentation
 

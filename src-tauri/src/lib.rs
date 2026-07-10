@@ -9,6 +9,9 @@ mod server;
 mod setup;
 mod system;
 
+#[cfg(feature = "validation-tools")]
+pub mod validation_tools;
+
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![

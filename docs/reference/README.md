@@ -32,5 +32,6 @@ Use the [reference template](../_templates/reference.template.md) for new refere
 
 - [Manifest integration](manifest-integration.md)
 - [Implementation status](implementation-status.md)
+- [Launcher validation](launcher-validation.md)
 - [Supported capabilities](supported-capabilities.md)
 - [Versioning](versioning.md)
