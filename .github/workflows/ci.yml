@@ -65,6 +65,15 @@ jobs:
       - name: Check documentation
         run: npm run check:docs
 
+      - name: Check updater release configuration
+        run: npm run check:updater-config
+
+      - name: Test release tooling
+        run: npm run test:scripts
+
+      - name: Test frontend update lifecycle
+        run: npm run test:frontend
+
       - name: Typecheck frontend
         run: npm run typecheck
 

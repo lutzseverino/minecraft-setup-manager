@@ -1,6 +1,14 @@
 import { invoke } from "@tauri-apps/api/core";
+import { relaunch } from "@tauri-apps/plugin-process";
+import {
+  check,
+  type DownloadEvent,
+  type Update,
+} from "@tauri-apps/plugin-updater";
 
 import type {
+  AppUpdateDownloadProgress,
+  AppUpdateInfo,
   DiagnosticBundle,
   InstallPlan,
   InstallPlanRequest,
@@ -16,8 +24,114 @@ import type {
   ValidationResult,
 } from "@/lib/types";
 
+let pendingAppUpdate: Update | null = null;
+const appUpdateDownloadTimeoutMs = 30 * 60 * 1000;
+const progressByteInterval = 1024 * 1024;
+
 function isTauriRuntime() {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
+function supportsAppUpdates() {
+  return (
+    isTauriRuntime() &&
+    import.meta.env.PROD &&
+    import.meta.env.VITE_APP_UPDATER_ENABLED === "true"
+  );
+}
+
+async function replacePendingAppUpdate(update: Update | null) {
+  const previousUpdate = pendingAppUpdate;
+  pendingAppUpdate = update;
+
+  if (previousUpdate && previousUpdate !== update) {
+    await closeAppUpdate(previousUpdate);
+  }
+}
+
+async function closeAppUpdate(update: Update) {
+  try {
+    await update.close();
+  } catch {
+    // The native updater resource is already unusable; cleanup must not hide a result.
+  }
+}
+
+function appUpdateInfo(update: Update): AppUpdateInfo {
+  return {
+    currentVersion: update.currentVersion,
+    version: update.version,
+    date: update.date ?? null,
+    notes: update.body ?? null,
+  };
+}
+
+export async function checkForAppUpdate() {
+  if (!supportsAppUpdates()) {
+    return undefined;
+  }
+
+  const update = await check({ timeout: 15_000 });
+  await replacePendingAppUpdate(update);
+  return update ? appUpdateInfo(update) : null;
+}
+
+export async function downloadAndInstallAppUpdate(
+  onProgress: (progress: AppUpdateDownloadProgress) => void,
+) {
+  const update = pendingAppUpdate;
+  if (!update) {
+    throw new Error("No application update is ready to download.");
+  }
+
+  let downloadedBytes = 0;
+  let lastReportedBytes = 0;
+  let lastReportedPercent: number | null = null;
+  let totalBytes: number | null = null;
+
+  const reportProgress = (event: DownloadEvent) => {
+    if (event.event === "Started") {
+      totalBytes = event.data.contentLength ?? null;
+    } else if (event.event === "Progress") {
+      downloadedBytes += event.data.chunkLength;
+    } else if (totalBytes !== null) {
+      downloadedBytes = totalBytes;
+    }
+
+    const progress = {
+      downloadComplete: event.event === "Finished",
+      downloadedBytes,
+      totalBytes,
+      percent:
+        totalBytes && totalBytes > 0
+          ? Math.min(100, Math.round((downloadedBytes / totalBytes) * 100))
+          : null,
+    };
+    const shouldReport =
+      event.event !== "Progress" ||
+      (progress.percent !== null
+        ? progress.percent !== lastReportedPercent
+        : downloadedBytes - lastReportedBytes >= progressByteInterval);
+    if (shouldReport) {
+      lastReportedBytes = downloadedBytes;
+      lastReportedPercent = progress.percent;
+      onProgress(progress);
+    }
+  };
+
+  await update.downloadAndInstall(reportProgress, {
+    timeout: appUpdateDownloadTimeoutMs,
+  });
+  pendingAppUpdate = null;
+  await closeAppUpdate(update);
+}
+
+export async function relaunchApplication() {
+  if (!supportsAppUpdates()) {
+    return;
+  }
+
+  await relaunch();
 }
 
 async function invokeOrFallback<T>(

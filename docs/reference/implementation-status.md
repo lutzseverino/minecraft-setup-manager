@@ -19,6 +19,10 @@
 14. Stable SKlauncher 3.2 adapter implementation, live workspace-presence
     enforcement, and isolated 3.2.18 clean-launcher round-trip validation for
     the standard Minecraft workspace.
+15. Prepared consent-driven application update discovery, mandatory artifact
+    signature verification, progress feedback, installation, relaunch, and a
+    prerelease-compatible update channel with rollback-safe promotion. Operator
+    key selection and the first publication remain before operational enablement.
 
 ## Known Gaps
 
@@ -32,5 +36,9 @@
    origin changes.
 5. Add plan-level rollback or a durable setup journal for stronger recovery from
    failures between individually atomic steps.
-6. Add recognized publisher signing, macOS notarization, and app update delivery
-   before treating the published development binaries as production-ready.
+6. Add recognized publisher signing and macOS notarization before treating the
+   published development binaries as production-ready.
+7. Exercise the first real updater-enabled release-to-release transition on
+   macOS Apple Silicon and Intel, Windows NSIS, Linux AppImage, and Linux DEB.
+   `v0.1.3` cannot be the baseline because it has no embedded updater key or
+   published signatures.

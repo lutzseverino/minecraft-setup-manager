@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Minecraft Setup Manager",
   "mainBinaryName": "Minecraft Setup Manager",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "identifier": "dev.lutzseverino.minecraft-setup-manager",
   "build": {
     "beforeDevCommand": "npm run dev",

@@ -14,5 +14,15 @@ Release tags use the form `v0.1.0`. A tag must exactly match the version in
 the release workflow and publishes native installers. `v0.*` tags are marked as
 development releases automatically.
 
+Application discovery intentionally does not use GitHub's standard latest
+release endpoint because that endpoint excludes prereleases. After a tagged
+release is complete and public, the workflow promotes its signed Tauri manifest
+to `update-channel/latest.json`. Promotion accepts only a higher numeric
+application version, or an identical retry of the current version.
+
+Every updater-enabled release must use the public key committed in the
+release-only Tauri configuration. Changing that trust root requires an
+old-key-signed transition release; it is not an ordinary version bump.
+
 The independently consumed Minecraft Setup Protocol follows Semantic Versioning
 and is versioned separately from this application.

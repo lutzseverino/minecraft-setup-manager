@@ -30,4 +30,5 @@ Use the [decision template](../_templates/decision.template.md) for new decision
 
 ## Decisions
 
+- [Publish signed updates through a dedicated application channel](signed-application-update-channel.md)
 - [Support only verified launcher profile formats](verified-launcher-profile-formats.md)

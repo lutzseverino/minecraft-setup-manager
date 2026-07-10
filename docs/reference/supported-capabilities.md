@@ -12,6 +12,7 @@ validate.
 | Direct resources | Supported | Requires public HTTPS and a SHA-256 or SHA-512 hash |
 | Multiplayer server entry | Supported | Preserves unrelated entries in `servers.dat` |
 | Setup updates | Supported | Previews additions, changes, and safe removals before applying them |
+| Application updates | Prepared | Checks without blocking, requires consent, verifies signed artifacts, installs, and relaunches; operator key selection is required before the first updater-enabled release |
 | Server setup codes | Supported | Checks in with the server only after local validation passes |
 | SKlauncher 3.2 | Supported | Requires a live standard workspace marker; version 3.2.18 passed an isolated clean-launcher round trip |
 | Relocated SKlauncher and SKlauncher 4.0 | Planned | Disabled until their workspace or instance contracts can be discovered safely |
