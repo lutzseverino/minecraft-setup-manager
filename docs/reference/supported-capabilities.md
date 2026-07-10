@@ -13,7 +13,7 @@ validate.
 | Multiplayer server entry | Supported | Preserves unrelated entries in `servers.dat` |
 | Setup updates | Supported | Previews additions, changes, and safe removals before applying them |
 | Server setup codes | Supported | Checks in with the server only after local validation passes |
-| SKlauncher 3.2 | Supported | Version 3.2.18 passed an isolated clean-launcher round trip for the standard Minecraft workspace |
+| SKlauncher 3.2 | Supported | Requires a live standard workspace marker; version 3.2.18 passed an isolated clean-launcher round trip |
 | Relocated SKlauncher and SKlauncher 4.0 | Planned | Disabled until their workspace or instance contracts can be discovered safely |
 | Manual profiles | Planned | Disabled until an interoperable handoff format is selected |
 | Signed manifests | Planned | Trust currently comes from the server address and the player's review |
