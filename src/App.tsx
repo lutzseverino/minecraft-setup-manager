@@ -57,6 +57,7 @@ export default function App() {
               error={wizard.resolveError}
               isResolving={wizard.isResolvingServer}
               onAddressChange={wizard.changeAddress}
+              onSetupCodeChange={wizard.changeSetupCode}
               onContinue={() => wizard.setStep("launcher")}
               onResolve={() => void wizard.resolveServer()}
               onSelectSavedServer={(server) => {
@@ -64,6 +65,7 @@ export default function App() {
               }}
               resolved={wizard.resolvedServer}
               savedServers={wizard.savedServers}
+              setupCode={wizard.setupCode}
             />
           ) : null}
           {wizard.step === "launcher" ? (

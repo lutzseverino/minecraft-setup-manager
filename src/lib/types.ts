@@ -122,6 +122,15 @@ export type ResolveServerManifestRequest = Readonly<{
   address: string;
 }>;
 
+export type RedeemSetupAttestationRequest = InstallPlanRequest &
+  Readonly<{
+    challenge: string;
+  }>;
+
+export type SetupAttestationReceipt = Readonly<{
+  manifestFingerprint: string;
+}>;
+
 export type ResolvedServerManifest = Readonly<{
   server: SavedServerEntry;
   manifest: SetupManifest;

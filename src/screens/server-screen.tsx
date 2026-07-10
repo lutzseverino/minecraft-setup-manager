@@ -28,11 +28,13 @@ type ServerScreenProps = Readonly<{
   error: string | null;
   isResolving: boolean;
   onAddressChange: (address: string) => void;
+  onSetupCodeChange: (code: string) => void;
   onContinue: () => void;
   onResolve: () => void;
   onSelectSavedServer: (server: SavedServerEntry) => void;
   resolved: ResolvedServerManifest | null;
   savedServers: SavedServerEntry[];
+  setupCode: string;
 }>;
 
 export function ServerScreen({
@@ -40,11 +42,13 @@ export function ServerScreen({
   error,
   isResolving,
   onAddressChange,
+  onSetupCodeChange,
   onContinue,
   onResolve,
   onSelectSavedServer,
   resolved,
   savedServers,
+  setupCode,
 }: ServerScreenProps) {
   const { t } = useTranslation();
 
@@ -92,6 +96,21 @@ export function ServerScreen({
               value={address}
             />
             <p className="text-sm text-muted-foreground">{t("server.help")}</p>
+            <div className="mt-3 grid gap-2 border-t-2 border-[var(--bevel-line)] pt-4">
+              <Label htmlFor="setup-code">{t("server.codeLabel")}</Label>
+              <Input
+                autoComplete="off"
+                id="setup-code"
+                maxLength={19}
+                onChange={(event) => onSetupCodeChange(event.target.value)}
+                placeholder={t("server.codePlaceholder")}
+                spellCheck={false}
+                value={setupCode}
+              />
+              <p className="text-sm text-muted-foreground">
+                {t("server.codeHelp")}
+              </p>
+            </div>
           </AppCardContent>
         </AppCard>
 

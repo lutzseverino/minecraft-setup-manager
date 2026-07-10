@@ -7,6 +7,7 @@ import {
   exportDiagnostics,
   getInstallPlan,
   listSavedServers,
+  redeemSetupAttestation,
   resolveServerManifest,
   startInstall,
   validateInstallation,
@@ -33,6 +34,7 @@ export function useSetupWizard() {
   const [step, setStep] = useState<WizardStepId>("server");
   const [savedServers, setSavedServers] = useState<SavedServerEntry[]>([]);
   const [serverAddress, setServerAddress] = useState("");
+  const [setupCode, setSetupCode] = useState("");
   const [resolvedServer, setResolvedServer] =
     useState<ResolvedServerManifest | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
@@ -130,6 +132,10 @@ export function useSetupWizard() {
     }
   }
 
+  function changeSetupCode(code: string) {
+    setSetupCode(code.toUpperCase());
+  }
+
   async function resolveServer(address = serverAddress) {
     setIsResolvingServer(true);
     setResolveError(null);
@@ -210,7 +216,43 @@ export function useSetupWizard() {
     setIsValidating(true);
     try {
       const result = await validateInstallation(installRequest);
-      setValidationResult(result);
+      if (result.overall !== "fail" && setupCode.trim()) {
+        try {
+          await redeemSetupAttestation({
+            ...installRequest,
+            challenge: setupCode,
+          });
+          setValidationResult({
+            overall: result.overall,
+            checks: [
+              ...result.checks,
+              {
+                id: "setup_attestation",
+                label: t("diagnostics.checks.setup_attestation.label"),
+                detail: t("diagnostics.checks.setup_attestation.detail"),
+                status: "pass",
+              },
+            ],
+          });
+        } catch (error) {
+          setValidationResult({
+            overall: "fail",
+            checks: [
+              ...result.checks,
+              {
+                id: "setup_attestation",
+                label: t("diagnostics.checks.setup_attestation.label"),
+                detail: t("diagnostics.checks.setup_attestation.failed", {
+                  message: errorMessage(error),
+                }),
+                status: "fail",
+              },
+            ],
+          });
+        }
+      } else {
+        setValidationResult(result);
+      }
     } catch (error) {
       setValidationResult({
         overall: "fail",
@@ -245,6 +287,7 @@ export function useSetupWizard() {
   function restart() {
     setStep("server");
     setServerAddress("");
+    setSetupCode("");
     setResolvedServer(null);
     setProfile("");
     setResolveError(null);
@@ -255,6 +298,7 @@ export function useSetupWizard() {
   return {
     buildPlan,
     changeAddress,
+    changeSetupCode,
     detections,
     diagnostics,
     exportSetupDiagnostics,
@@ -277,6 +321,7 @@ export function useSetupWizard() {
     runValidation,
     savedServers,
     serverAddress,
+    setupCode,
     setLauncher,
     setProfile,
     setStep,

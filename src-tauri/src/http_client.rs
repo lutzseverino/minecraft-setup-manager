@@ -1,12 +1,14 @@
 use std::fs;
 use std::io::{Read, Write};
-use std::net::IpAddr;
+use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 use std::path::Path;
 use std::time::Duration;
 
 use reqwest::blocking::{Client, Response};
 use reqwest::redirect::{Action, Attempt, Policy};
 use reqwest::Url;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(5 * 60);
@@ -49,22 +51,60 @@ pub fn download_to_path(
     Ok(copied)
 }
 
-fn get(url: &str, description: &str) -> Result<Response, String> {
-    validate_url(url)?;
-    let client = Client::builder()
-        .connect_timeout(CONNECT_TIMEOUT)
-        .timeout(REQUEST_TIMEOUT)
-        .redirect(Policy::custom(redirect_policy))
-        .user_agent(concat!("MinecraftSetupManager/", env!("CARGO_PKG_VERSION")))
-        .build()
-        .map_err(|error| format!("Could not prepare the download client: {error}"))?;
+pub fn post_json<Request: Serialize, ResponseBody: DeserializeOwned>(
+    url: &str,
+    body: &Request,
+    max_response_bytes: u64,
+    description: &str,
+) -> Result<ResponseBody, String> {
+    let (url, addresses) = prepare_url(url)?;
+    let response = client(false, &url, &addresses)?
+        .post(url)
+        .json(body)
+        .send()
+        .map_err(|error| format!("Could not reach the {description}: {error}"))?;
+    let status = response.status();
+    let bytes = read_limited(response, max_response_bytes, description)?;
 
-    client
+    if !status.is_success() {
+        return Err(protocol_error_message(status.as_u16(), &bytes, description));
+    }
+
+    serde_json::from_slice(&bytes)
+        .map_err(|error| format!("The {description} returned an invalid response: {error}"))
+}
+
+fn get(url: &str, description: &str) -> Result<Response, String> {
+    let (url, addresses) = prepare_url(url)?;
+    client(true, &url, &addresses)?
         .get(url)
         .send()
         .map_err(|error| format!("Could not reach the {description}: {error}"))?
         .error_for_status()
         .map_err(|error| format!("The {description} could not be downloaded: {error}"))
+}
+
+fn client(
+    follow_same_origin_redirects: bool,
+    url: &Url,
+    addresses: &[SocketAddr],
+) -> Result<Client, String> {
+    let redirects = if follow_same_origin_redirects {
+        Policy::custom(redirect_policy)
+    } else {
+        Policy::none()
+    };
+    let host = url
+        .host_str()
+        .ok_or_else(|| "The network URL has no host.".to_string())?;
+    Client::builder()
+        .connect_timeout(CONNECT_TIMEOUT)
+        .timeout(REQUEST_TIMEOUT)
+        .redirect(redirects)
+        .user_agent(concat!("MinecraftSetupManager/", env!("CARGO_PKG_VERSION")))
+        .resolve_to_addrs(host, addresses)
+        .build()
+        .map_err(|error| format!("Could not prepare the network client: {error}"))
 }
 
 fn read_limited(response: Response, max_bytes: u64, description: &str) -> Result<Vec<u8>, String> {
@@ -107,6 +147,38 @@ fn validate_url(url: &str) -> Result<(), String> {
     }
 }
 
+fn prepare_url(value: &str) -> Result<(Url, Vec<SocketAddr>), String> {
+    validate_url(value)?;
+    let url = Url::parse(value).map_err(|_| "The network URL is not valid.".to_string())?;
+    let host = url
+        .host_str()
+        .ok_or_else(|| "The network URL has no host.".to_string())?;
+    let port = url
+        .port_or_known_default()
+        .ok_or_else(|| "The network URL has no usable port.".to_string())?;
+    let addresses = (host, port)
+        .to_socket_addrs()
+        .map_err(|_| "The server address could not be found.".to_string())?
+        .collect::<Vec<_>>();
+    if addresses.is_empty() {
+        return Err("The server address did not resolve to a network address.".to_string());
+    }
+
+    let loopback_target = is_loopback_host(host);
+    let unsafe_address = addresses.iter().any(|address| {
+        if loopback_target {
+            !address.ip().is_loopback()
+        } else {
+            crate::manifest::validation::is_non_public_ip(address.ip())
+        }
+    });
+    if unsafe_address {
+        return Err("The server address resolved to a private or local network.".to_string());
+    }
+
+    Ok((url, addresses))
+}
+
 fn is_allowed_url(url: &Url) -> bool {
     match url.scheme() {
         "https" => url
@@ -138,6 +210,38 @@ fn is_explicitly_non_public_host(host: &str) -> bool {
             .is_ok_and(crate::manifest::validation::is_non_public_ip)
 }
 
+fn protocol_error_message(status: u16, bytes: &[u8], description: &str) -> String {
+    #[derive(serde::Deserialize)]
+    struct Problem {
+        code: Option<String>,
+    }
+
+    let code = serde_json::from_slice::<Problem>(bytes)
+        .ok()
+        .and_then(|problem| problem.code);
+    match code.as_deref() {
+        Some("challenge_invalid") => {
+            "That setup code is not valid. Check the code shown by Minecraft.".to_string()
+        }
+        Some("challenge_expired") => {
+            "That setup code expired. Try joining the server again to get a new code.".to_string()
+        }
+        Some("fingerprint_mismatch") => {
+            "The server setup changed. Check the server again and apply the new setup.".to_string()
+        }
+        Some("profile_invalid") => {
+            "The chosen setup option is no longer available. Check the server again.".to_string()
+        }
+        Some("rate_limited") => {
+            "Too many setup codes were tried. Wait a minute and try again.".to_string()
+        }
+        Some("attestation_unavailable") => {
+            "The server could not save this setup check. Try again soon.".to_string()
+        }
+        _ => format!("The {description} returned HTTP {status}."),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -166,5 +270,14 @@ mod tests {
 
         assert!(has_same_origin(&source, &same_origin));
         assert!(!has_same_origin(&source, &other_origin));
+    }
+
+    #[test]
+    fn resolves_loopback_once_for_pinned_local_development() {
+        let (url, addresses) = prepare_url("http://localhost:8765/manifest.json").unwrap();
+
+        assert_eq!(url.host_str(), Some("localhost"));
+        assert!(!addresses.is_empty());
+        assert!(addresses.iter().all(|address| address.ip().is_loopback()));
     }
 }

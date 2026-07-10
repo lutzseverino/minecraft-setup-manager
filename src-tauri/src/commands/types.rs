@@ -53,6 +53,22 @@ pub struct ResolveServerManifestRequest {
     pub address: String,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RedeemSetupAttestationRequest {
+    pub server_id: String,
+    pub manifest_fingerprint: String,
+    pub launcher: LauncherKind,
+    pub profile: String,
+    pub challenge: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupAttestationReceipt {
+    pub manifest_fingerprint: String,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SavedServerEntry {

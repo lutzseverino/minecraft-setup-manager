@@ -21,7 +21,8 @@ suite and golden fingerprints must match before a protocol update is accepted.
 - `src/lib/tauri.ts` is the only frontend module that imports Tauri APIs.
 - `src-tauri/src/commands/` owns thin Tauri command handlers and shared DTOs.
 - `src-tauri/src/app_state/` owns saved servers and durable update state.
-- `src-tauri/src/server/` owns server address normalization and manifest discovery.
+- `src-tauri/src/server/` owns server address normalization, manifest discovery,
+  and the optional setup-attestation exchange.
 - `src-tauri/src/manifest/` owns setup manifest schema, fetching, validation, and
   fingerprinting.
 - `src-tauri/src/launcher/` owns launcher adapter boundaries.
@@ -79,6 +80,9 @@ game folder, installs pinned Fabric launcher metadata, syncs hash-pinned direct
 resources and pinned Modrinth files, writes a setup receipt, creates or updates
 the optional `servers.dat` entry and official Minecraft Launcher profile,
 validates those local files and launcher settings, and exports a small report.
+When the player enters a setup code, the backend repeats local validation and
+redeems that code against the approved manifest origin. React never submits an
+attestation directly.
 
 Apply is idempotent and only advances durable installed state after a conformance
 pass verifies the loader version, launcher profile, setup receipt identity,

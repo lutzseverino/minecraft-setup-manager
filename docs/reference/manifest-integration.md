@@ -1,7 +1,7 @@
 # Setup Manifest Integration
 
 Minecraft Setup Manager consumes versioned manifests from the independently
-owned [Minecraft Setup Protocol](../protocol) repository. The pinned submodule
+owned [Minecraft Setup Protocol](../../protocol) repository. The pinned submodule
 is the source of truth for schema, semantics, canonical fingerprints, fixtures,
 and HTTPS publication behavior.
 

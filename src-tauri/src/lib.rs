@@ -16,6 +16,7 @@ pub fn run() {
             commands::export_diagnostics,
             commands::get_install_plan,
             commands::list_saved_servers,
+            commands::redeem_setup_attestation,
             commands::resolve_server_manifest,
             commands::start_install,
             commands::validate_installation,

@@ -88,6 +88,40 @@ pub fn validate_installation(request: InstallPlanRequest) -> Result<ValidationRe
     ))
 }
 
+#[tauri::command]
+pub fn redeem_setup_attestation(
+    request: RedeemSetupAttestationRequest,
+) -> Result<SetupAttestationReceipt, String> {
+    let install_request = InstallPlanRequest {
+        server_id: request.server_id,
+        manifest_fingerprint: request.manifest_fingerprint,
+        launcher: request.launcher,
+        profile: request.profile,
+    };
+    let (plan, manifest, fingerprint) = build_plan_context(&install_request)?;
+    planner::ensure_plan_is_supported(&plan)?;
+    let validation = setup::validate_client(&plan, &manifest)?;
+    let result = minecraft::validation::validate_client_setup(&plan, &validation);
+    ensure_validation_passed(&result)?;
+    if result.overall != ValidationStatus::Pass {
+        return Err(
+            "The local setup has warnings, so it cannot be confirmed to the server yet."
+                .to_string(),
+        );
+    }
+    let saved_server = crate::app_state::saved_server_entry(&install_request.server_id)?;
+    server::attestation::redeem(
+        &saved_server.manifest_url,
+        &request.challenge,
+        &fingerprint,
+        &install_request.profile,
+    )?;
+
+    Ok(SetupAttestationReceipt {
+        manifest_fingerprint: fingerprint,
+    })
+}
+
 fn build_plan_context(
     request: &InstallPlanRequest,
 ) -> Result<(InstallPlan, manifest::schema::SetupManifest, String), String> {

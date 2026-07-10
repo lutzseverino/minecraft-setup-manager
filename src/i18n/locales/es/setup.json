@@ -65,6 +65,9 @@
     "addressLabel": "Direccion del servidor",
     "addressPlaceholder": "play.example.com",
     "help": "Usa la direccion que los jugadores escriben en Minecraft. La app busca la lista de configuracion desde ahi.",
+    "codeLabel": "Codigo de configuracion (opcional)",
+    "codePlaceholder": "0123-4567-89AB-CDEF",
+    "codeHelp": "Escribelo solo si Minecraft mostro un codigo al intentar entrar.",
     "fetch": "Obtener lista",
     "checking": "Revisando",
     "continue": "Continuar",
@@ -223,6 +226,11 @@
       "server_entry": {
         "label": "Servidor guardado",
         "detail": "El servidor esta en la lista de servidores de Minecraft."
+      },
+      "setup_attestation": {
+        "label": "Aviso al servidor",
+        "detail": "El servidor sabe que esta configuracion esta lista.",
+        "failed": "La configuracion local esta lista, pero el servidor no acepto el codigo: {{message}}"
       }
     }
   },

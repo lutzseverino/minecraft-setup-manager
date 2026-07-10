@@ -65,6 +65,9 @@
     "addressLabel": "Server address",
     "addressPlaceholder": "play.example.com",
     "help": "Use the address players type in Minecraft. The app looks for the setup list from there.",
+    "codeLabel": "Setup code (optional)",
+    "codePlaceholder": "0123-4567-89AB-CDEF",
+    "codeHelp": "Only enter this if Minecraft showed you a setup code when you tried to join.",
     "fetch": "Get setup list",
     "checking": "Checking",
     "continue": "Continue",
@@ -223,6 +226,11 @@
       "server_entry": {
         "label": "Saved server",
         "detail": "The server is in Minecraft's server list."
+      },
+      "setup_attestation": {
+        "label": "Server check-in",
+        "detail": "The server knows this setup is ready.",
+        "failed": "The local setup is ready, but the server did not accept the code: {{message}}"
       }
     }
   },

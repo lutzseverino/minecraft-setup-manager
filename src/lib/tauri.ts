@@ -6,11 +6,13 @@ import type {
   InstallPlanRequest,
   InstallProgress,
   LauncherDetection,
+  RedeemSetupAttestationRequest,
   ResolvedServerManifest,
   ResolveServerManifestRequest,
   SavedServerEntry,
   StartInstallRequest,
   SetupManifest,
+  SetupAttestationReceipt,
   ValidationResult,
 } from "@/lib/types";
 
@@ -336,6 +338,16 @@ export async function validateInstallation(request: InstallPlanRequest) {
         },
       ],
     },
+  );
+}
+
+export async function redeemSetupAttestation(
+  request: RedeemSetupAttestationRequest,
+) {
+  return invokeOrFallback<SetupAttestationReceipt>(
+    "redeem_setup_attestation",
+    { request },
+    { manifestFingerprint: request.manifestFingerprint },
   );
 }
 
