@@ -75,8 +75,8 @@ The [documentation index](docs/README.md) links tutorials, how-to guides,
 reference, architecture and safety explanations, and decision records. Current
 support is listed in [supported capabilities](docs/reference/supported-capabilities.md).
 
-The app uses Romantic Versioning; see the
-[versioning reference](docs/reference/versioning.md).
+The repository's versioning policy and compatibility expectations are documented
+in the [versioning reference](docs/reference/versioning.md).
 
 ## License
 
