@@ -71,12 +71,8 @@ the production frontend build, Rust formatting, tests, and strict Clippy.
 
 ## Documentation
 
-The [documentation index](docs/README.md) links tutorials, how-to guides,
-reference, architecture and safety explanations, and decision records. Current
-support is listed in [supported capabilities](docs/reference/supported-capabilities.md).
-
-The repository's versioning policy and compatibility expectations are documented
-in the [versioning reference](docs/reference/versioning.md).
+Start with the [documentation index](docs/README.md). Documentation is organized
+by reader intent so durable guidance has one predictable home.
 
 ## License
 

@@ -1,5 +1,12 @@
 # Architecture
 
+## Purpose
+
+Define the manager's ownership boundaries, dependency direction, and current
+implementation model.
+
+## Overview
+
 Minecraft Setup Manager is a Tauri 2 desktop app with a Vite, React, and
 TypeScript frontend.
 
@@ -8,7 +15,9 @@ submodule. Rust manifest models and validators are consumer implementations of
 that contract, not its owner. Protocol fixtures run directly in the Rust test
 suite and golden fingerprints must match before a protocol update is accepted.
 
-## Responsibility Boundaries
+## Key Concepts
+
+### Responsibility Boundaries
 
 - `src/hooks/` owns wizard orchestration, async command state, and lifecycle resets.
 - `src/screens/` owns presentational wizard composition.
@@ -46,7 +55,7 @@ and validation requests carry the fingerprint shown by the UI and fail if it no
 longer matches that snapshot. App state and cached manifests use serialized,
 atomic writes so a crash cannot truncate the only durable copy.
 
-## Dependency Direction
+### Dependency Direction
 
 React screens call typed functions from `src/lib/tauri.ts`. They do not import
 `@tauri-apps/api` directly and do not know filesystem paths or launcher profile
@@ -72,7 +81,7 @@ ID. Manifest folder names are display leaves inside that root, never global
 instance identifiers. A resource destination may be replaced only when the
 planner supplies the previous managed file and its current hash still matches.
 
-## Current Implementation State
+### Current Implementation State
 
 The app currently resolves and stores server manifests, consumes manifest-defined
 setup profiles, builds setup plans from saved manifests, creates the isolated
@@ -94,3 +103,12 @@ trust pinning remains a manifest/app-state concern. Multi-step rollback remains
 a setup orchestration concern; today each owned write is atomic or backed up,
 and a failed run leaves installed state unchanged so the desired state can be
 repaired by rerunning it.
+
+## Implications
+
+- New side effects belong in the Rust module that owns the affected domain.
+- Frontend code depends on typed command contracts rather than backend details.
+- Protocol changes are adopted through an immutable protocol release and its
+  conformance fixtures.
+- Unsupported launcher behavior remains disabled until its adapter can apply
+  and validate the complete operation.
