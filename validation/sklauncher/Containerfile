@@ -1,0 +1,38 @@
+ARG TEMURIN_IMAGE
+FROM ${TEMURIN_IMAGE}
+
+ARG SKLAUNCHER_SHA256
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
+        ca-certificates \
+        dbus-x11 \
+        fonts-dejavu-core \
+        imagemagick \
+        libasound2 \
+        libgl1 \
+        libgtk-3-0 \
+        libx11-xcb1 \
+        libxi6 \
+        libxrender1 \
+        libxtst6 \
+        openbox \
+        procps \
+        xdotool \
+        xvfb \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 1000 validator
+
+COPY SKlauncher.jar /opt/sklauncher/SKlauncher.jar
+COPY run-launcher.sh /usr/local/bin/run-launcher
+
+RUN echo "${SKLAUNCHER_SHA256}  /opt/sklauncher/SKlauncher.jar" | sha256sum --check --strict \
+    && chmod 0555 /usr/local/bin/run-launcher \
+    && chmod 0444 /opt/sklauncher/SKlauncher.jar
+
+USER validator
+ENV DISPLAY=:99
+ENV HOME=/workspace/home
+WORKDIR /workspace
+
+ENTRYPOINT ["/usr/local/bin/run-launcher"]

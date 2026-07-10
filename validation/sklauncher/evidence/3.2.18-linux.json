@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "completedAt": "2026-07-10T10:34:55Z",
+  "launcher": {
+    "name": "SKlauncher",
+    "version": "3.2.18",
+    "sha256": "25a73e3770a1d8d14bce53e8920e2e893aacc3c715d0fb22f878ef2090d03863"
+  },
+  "environment": {
+    "guest": "Ubuntu 26.04",
+    "isolation": "QEMU/KVM VM with private-network egress denied",
+    "containerBase": "eclipse-temurin:21-jre-jammy@sha256:468586c92d39f8cbad76574623db3fe001625ed4d895431c3ff7bd2ec9ce7ae3",
+    "launcherModes": ["demo", "offline"],
+    "credentialsPresent": false
+  },
+  "profile": {
+    "id": "a5c222e738d21cf5ad6d642ae3a5dee0",
+    "versionId": "1.21.6",
+    "created": true,
+    "backupCreated": true,
+    "sameIdAfterLauncherReload": true,
+    "gameDirectoryMatchedAfterLauncherReload": true,
+    "versionMatchedAfterLauncherReload": true,
+    "unchangedOnSecondManagerPass": true,
+    "unknownRootFieldPreservedByLauncher": true,
+    "unknownProfileFieldPreservedByLauncher": false,
+    "visibleInOfflineInstallationList": true,
+    "selectedOfflineVersionId": "1.21.6",
+    "unchangedAfterOfflineSession": true
+  },
+  "screenshots": {
+    "bootstrapSha256": "7a22c93806a51ee1f73bd48292c02bb3e1ffdef1f3607a1487a11ff83727fcce",
+    "reloadSha256": "7a22c93806a51ee1f73bd48292c02bb3e1ffdef1f3607a1487a11ff83727fcce",
+    "offlineInstallationListSha256": "e81588c7ea51a651ce3b9f53b4a7e9ba67405ef51f34e86bd7182ac809252ec7",
+    "offlineProfileSelectedSha256": "1c9de21a242b6ccb6fe5aab97e5ea8fad63c386785bd93677127df0e5f06f37d"
+  },
+  "result": "pass"
+}

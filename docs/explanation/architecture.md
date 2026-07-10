@@ -35,6 +35,8 @@ suite and golden fingerprints must match before a protocol update is accepted.
 - `src-tauri/src/manifest/` owns setup manifest schema, fetching, validation, and
   fingerprinting.
 - `src-tauri/src/launcher/` owns launcher adapter boundaries.
+  `minecraft_profiles.rs` owns the shared `launcher_profiles.json` storage used
+  by the official launcher and compatible SKlauncher versions.
 - `src-tauri/src/minecraft/` owns local install preparation, Fabric, Modrinth,
   server entry, file repair, and validation modules.
 - `src-tauri/src/system/` owns platform path helpers.
@@ -87,8 +89,9 @@ The app currently resolves and stores server manifests, consumes manifest-define
 setup profiles, builds setup plans from saved manifests, creates the isolated
 game folder, installs pinned Fabric launcher metadata, syncs hash-pinned direct
 resources and pinned Modrinth files, writes a setup receipt, creates or updates
-the optional `servers.dat` entry and official Minecraft Launcher profile,
-validates those local files and launcher settings, and exports a small report.
+the optional `servers.dat` entry and an official Minecraft Launcher or stable
+SKlauncher 3.2 profile, validates those local files and launcher settings, and
+exports a small report.
 When the player enters a setup code, the backend repeats local validation and
 redeems that code against the approved manifest origin. React never submits an
 attestation directly.
@@ -98,11 +101,11 @@ pass verifies the loader version, launcher profile, setup receipt identity,
 optional server entry, and every selected resource hash. A failed post-check is
 reported as a failed setup and leaves the previous installed-state record intact.
 
-SKlauncher and manual profile writes remain launcher-adapter work. Manifest
-trust pinning remains a manifest/app-state concern. Multi-step rollback remains
-a setup orchestration concern; today each owned write is atomic or backed up,
-and a failed run leaves installed state unchanged so the desired state can be
-repaired by rerunning it.
+Relocated SKlauncher workspaces, SKlauncher 4.0, and manual profile writes remain
+launcher-adapter work. Manifest trust pinning remains a manifest/app-state
+concern. Multi-step rollback remains a setup orchestration concern; today each
+owned write is atomic or backed up, and a failed run leaves installed state
+unchanged so the desired state can be repaired by rerunning it.
 
 ## Implications
 

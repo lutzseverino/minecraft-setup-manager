@@ -48,6 +48,9 @@ jobs:
       - name: Check release version
         run: npm run check:version
 
+      - name: Check documentation
+        run: npm run check:docs
+
       - name: Typecheck frontend
         run: npm run typecheck
 

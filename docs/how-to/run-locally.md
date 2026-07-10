@@ -20,9 +20,10 @@ command responses and does not modify Minecraft files.
 Run the complete local quality gate with:
 
 ```bash
+npm run check:version
+npm run check:docs
 npm run typecheck
 npm run check:architecture
-npm run check:version
 npm run build
 cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
 cargo test --manifest-path src-tauri/Cargo.toml --all-targets --all-features
