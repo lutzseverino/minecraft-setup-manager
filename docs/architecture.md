@@ -3,6 +3,11 @@
 Minecraft Setup Manager is a Tauri 2 desktop app with a Vite, React, and
 TypeScript frontend.
 
+The language-neutral manifest contract is pinned through the `protocol`
+submodule. Rust manifest models and validators are consumer implementations of
+that contract, not its owner. Protocol fixtures run directly in the Rust test
+suite and golden fingerprints must match before a protocol update is accepted.
+
 ## Responsibility Boundaries
 
 - `src/hooks/` owns wizard orchestration, async command state, and lifecycle resets.
@@ -28,6 +33,12 @@ Manifest data crosses a strict validation boundary before it can be saved,
 planned, or applied. Validation owns schema support, IDs, limits, relationships,
 hash and URL policy, and portable path names. Filesystem owners repeat path and
 symlink checks before mutation as defense in depth.
+
+Every protocol resource declares one explicit destination filename. Destination
+ownership is globally unique across profiles using a case-folded comparison, so
+changing profiles cannot transfer a path between resource IDs. Modrinth remains
+a resolution adapter, but its selected primary file must match that declared
+destination.
 
 The validated manifest is cached as the current checked snapshot. Plan, apply,
 and validation requests carry the fingerprint shown by the UI and fail if it no

@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use reqwest::Url;
+use unicode_normalization::UnicodeNormalization;
 
 use super::schema::{
     ManifestLoaderKind, ManifestResource, ManifestResourceSource, ManifestResourceTarget,
@@ -97,8 +98,8 @@ pub fn validate_manifest(manifest: &SetupManifest, source_url: &str) -> Result<(
         }
     }
 
-    let source_is_local = is_local_url(source_url)?;
-    validate_resources(manifest, &profile_ids, source_is_local)?;
+    let source_is_loopback = is_loopback_url(source_url)?;
+    validate_resources(manifest, &profile_ids, source_is_loopback)?;
 
     if let Some(entry) = &manifest.server_entry {
         validate_text(&entry.name, "saved server name", MAX_LABEL_LENGTH)?;
@@ -111,11 +112,10 @@ pub fn validate_manifest(manifest: &SetupManifest, source_url: &str) -> Result<(
 fn validate_resources(
     manifest: &SetupManifest,
     profile_ids: &HashSet<&str>,
-    source_is_local: bool,
+    source_is_loopback: bool,
 ) -> Result<(), String> {
     let mut resource_ids = HashSet::new();
-    let mut destinations: HashMap<(ManifestResourceTarget, String), &ManifestResource> =
-        HashMap::new();
+    let mut destinations: HashMap<(ManifestResourceTarget, String), &str> = HashMap::new();
 
     for resource in &manifest.resources {
         validate_id(&resource.id, "resource ID")?;
@@ -137,35 +137,19 @@ fn validate_resources(
             ));
         }
         validate_resource_profiles(resource, profile_ids)?;
-        validate_resource_source(resource, source_is_local)?;
+        validate_resource_source(resource, source_is_loopback)?;
 
-        if matches!(resource.source, ManifestResourceSource::Direct { .. })
-            && resolved_direct_file_name(resource).is_none()
-        {
+        let file_name = resource
+            .file_name
+            .as_deref()
+            .ok_or_else(|| format!("Resource {} must provide its exact file name.", resource.id))?;
+        path_safety::validate_portable_component(file_name, "resource file name")?;
+        let destination = (resource.target.clone(), file_name.to_lowercase());
+        if let Some(existing_id) = destinations.insert(destination, resource.id.as_str()) {
             return Err(format!(
-                "Direct resource {} must provide a plain file name or use one in its URL.",
+                "Resources {existing_id} and {} use the same destination file.",
                 resource.id
             ));
-        }
-
-        if let Some(file_name) = resolved_direct_file_name(resource) {
-            if file_name.chars().count() > 255 {
-                return Err(format!(
-                    "Resource {} has a file name that is too long.",
-                    resource.id
-                ));
-            }
-            path_safety::validate_portable_component(&file_name, "resource file name")?;
-            let destination = (resource.target.clone(), file_name);
-            if let Some(existing) = destinations.get(&destination) {
-                if profiles_overlap(existing, resource) {
-                    return Err(format!(
-                        "Resources {} and {} use the same destination file.",
-                        existing.id, resource.id
-                    ));
-                }
-            }
-            destinations.insert(destination, resource);
         }
     }
 
@@ -221,11 +205,11 @@ fn validate_resource_profiles(
 
 fn validate_resource_source(
     resource: &ManifestResource,
-    source_is_local: bool,
+    source_is_loopback: bool,
 ) -> Result<(), String> {
     match &resource.source {
         ManifestResourceSource::Direct { url } => {
-            validate_direct_url(url, source_is_local)?;
+            validate_direct_url(url, source_is_loopback)?;
             if resource.hashes.sha512.is_none() && resource.hashes.sha256.is_none() {
                 return Err(format!(
                     "Direct resource {} must include a SHA-256 or SHA-512 hash.",
@@ -252,17 +236,18 @@ fn validate_resource_source(
     Ok(())
 }
 
-fn validate_direct_url(url: &str, source_is_local: bool) -> Result<(), String> {
+fn validate_direct_url(url: &str, source_is_loopback: bool) -> Result<(), String> {
     let parsed = Url::parse(url).map_err(|_| "A direct resource URL is not valid.".to_string())?;
     if !parsed.username().is_empty() || parsed.password().is_some() {
         return Err("Direct resource URLs must not contain a username or password.".to_string());
     }
-    let local = is_local_parsed_url(&parsed);
+    let loopback = is_loopback_parsed_url(&parsed);
+    let non_public = is_non_public_parsed_url(&parsed);
 
-    if parsed.scheme() == "https" && (!local || source_is_local) {
+    if parsed.scheme() == "https" && !non_public {
         return Ok(());
     }
-    if parsed.scheme() == "http" && local && source_is_local {
+    if source_is_loopback && loopback && matches!(parsed.scheme(), "http" | "https") {
         return Ok(());
     }
 
@@ -270,36 +255,17 @@ fn validate_direct_url(url: &str, source_is_local: bool) -> Result<(), String> {
 }
 
 fn validate_hash(hash: &str, length: usize, kind: &str, resource_id: &str) -> Result<(), String> {
-    if hash.len() == length && hash.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+    if hash.len() == length
+        && hash
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || matches!(byte, b'a'..=b'f'))
+    {
         Ok(())
     } else {
         Err(format!(
             "Resource {resource_id} has an invalid {kind} hash."
         ))
     }
-}
-
-fn resolved_direct_file_name(resource: &ManifestResource) -> Option<String> {
-    resource.file_name.clone().or_else(|| {
-        let ManifestResourceSource::Direct { url } = &resource.source else {
-            return None;
-        };
-        Url::parse(url)
-            .ok()?
-            .path_segments()?
-            .next_back()
-            .filter(|segment| !segment.is_empty())
-            .map(ToString::to_string)
-    })
-}
-
-fn profiles_overlap(left: &ManifestResource, right: &ManifestResource) -> bool {
-    left.profiles.is_empty()
-        || right.profiles.is_empty()
-        || left
-            .profiles
-            .iter()
-            .any(|profile| right.profiles.contains(profile))
 }
 
 fn validate_id(value: &str, label: &str) -> Result<(), String> {
@@ -328,6 +294,9 @@ fn validate_text(value: &str, label: &str, max_length: usize) -> Result<(), Stri
             "The {label} contains unsupported control characters."
         ));
     }
+    if value != value.nfc().collect::<String>() {
+        return Err(format!("The {label} must use normalized Unicode text."));
+    }
     Ok(())
 }
 
@@ -341,27 +310,35 @@ fn validate_server_address(value: &str, label: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn is_local_url(url: &str) -> Result<bool, String> {
+fn is_loopback_url(url: &str) -> Result<bool, String> {
     let parsed = Url::parse(url).map_err(|_| "The setup file URL is not valid.".to_string())?;
-    Ok(is_local_parsed_url(&parsed))
+    Ok(is_loopback_parsed_url(&parsed))
 }
 
-fn is_local_parsed_url(url: &Url) -> bool {
+fn is_loopback_parsed_url(url: &Url) -> bool {
     let Some(host) = url.host_str() else {
         return false;
     };
     let host = host.trim_start_matches('[').trim_end_matches(']');
-    if host.eq_ignore_ascii_case("localhost")
-        || host.ends_with(".localhost")
-        || host.ends_with(".local")
-    {
+    if host.eq_ignore_ascii_case("localhost") || host.ends_with(".localhost") {
         return true;
     }
 
-    host.parse::<IpAddr>().is_ok_and(is_non_public_ip)
+    host.parse::<IpAddr>().is_ok_and(|ip| ip.is_loopback())
 }
 
-fn is_non_public_ip(ip: IpAddr) -> bool {
+fn is_non_public_parsed_url(url: &Url) -> bool {
+    let Some(host) = url.host_str() else {
+        return true;
+    };
+    let host = host.trim_start_matches('[').trim_end_matches(']');
+    host.eq_ignore_ascii_case("localhost")
+        || host.ends_with(".localhost")
+        || host.ends_with(".local")
+        || host.parse::<IpAddr>().is_ok_and(is_non_public_ip)
+}
+
+pub(crate) fn is_non_public_ip(ip: IpAddr) -> bool {
     match ip {
         IpAddr::V4(ip) => is_non_public_ipv4(ip),
         IpAddr::V6(ip) => is_non_public_ipv6(ip),
@@ -424,7 +401,7 @@ mod tests {
     }
 
     #[test]
-    fn allows_duplicate_destinations_for_disjoint_profiles() {
+    fn rejects_duplicate_destinations_for_disjoint_profiles() {
         let mut manifest = manifest();
         manifest.resources[0].profiles = vec!["light".to_string()];
         let mut alternative = manifest.resources[0].clone();
@@ -432,7 +409,10 @@ mod tests {
         alternative.profiles = vec!["visual".to_string()];
         manifest.resources.push(alternative);
 
-        assert!(validate_manifest(&manifest, "https://setup.example.com/manifest.json").is_ok());
+        let error = validate_manifest(&manifest, "https://setup.example.com/manifest.json")
+            .expect_err("profile changes must not transfer file ownership");
+
+        assert!(error.contains("same destination file"));
     }
 
     #[test]

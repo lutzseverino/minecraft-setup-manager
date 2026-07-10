@@ -140,6 +140,18 @@ fn resolve_version(
         .find(|file| file.primary)
         .or_else(|| metadata.files.first())
         .ok_or_else(|| format!("Modrinth version {version} does not contain a download file."))?;
+    let expected_file_name = resource.file_name.as_deref().ok_or_else(|| {
+        format!(
+            "Modrinth resource {} does not declare its expected file name.",
+            resource.id
+        )
+    })?;
+    if file.filename != expected_file_name {
+        return Err(format!(
+            "Modrinth resource {} resolved to {}, but the manifest requested {}.",
+            resource.id, file.filename, expected_file_name
+        ));
+    }
     if file.size > MAX_RESOURCE_BYTES {
         return Err(format!("Modrinth resource {} is too large.", resource.id));
     }
@@ -154,10 +166,7 @@ fn resolve_version(
         }
     }
 
-    let file_name = resource
-        .file_name
-        .clone()
-        .unwrap_or_else(|| file.filename.clone());
+    let file_name = expected_file_name.to_string();
     path_safety::validate_portable_component(&file_name, "Modrinth file name")?;
     let hashes = ManifestResourceHashes {
         sha512: Some(file.hashes.sha512.to_ascii_lowercase()),
@@ -274,6 +283,17 @@ mod tests {
         assert!(error.contains("secure CDN"));
     }
 
+    #[test]
+    fn rejects_a_primary_file_with_another_name() {
+        let mut resource = resource();
+        resource.file_name = Some("another.jar".to_string());
+
+        let error = resolve_version(&resource, &plan(), version(), "project")
+            .expect_err("wrong primary file must fail");
+
+        assert!(error.contains("manifest requested"));
+    }
+
     fn resource() -> ManifestResource {
         ManifestResource {
             id: "example-mod".to_string(),
@@ -282,7 +302,7 @@ mod tests {
             target: ManifestResourceTarget::Mods,
             required: true,
             profiles: vec![],
-            file_name: None,
+            file_name: Some("primary.jar".to_string()),
             source: ManifestResourceSource::Modrinth {
                 project: "project".to_string(),
                 version: "version".to_string(),

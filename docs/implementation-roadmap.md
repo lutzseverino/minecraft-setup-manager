@@ -13,17 +13,21 @@
 9. English and Spanish UI selected from the browser language.
 10. Server-namespaced game folders and unowned-file replacement protection.
 11. Native macOS, Windows, and Linux CI build coverage.
+12. Independently versioned protocol v1 with shared schema, semantics,
+    conformance fixtures, and RFC 8785 fingerprints.
 
 ## Next
 
 1. Add SKlauncher profile creation and validation behind its launcher adapter.
 2. Decide whether manual mode should export instructions or support another
    interoperable profile format before enabling it.
-3. Add trust-on-first-use pinning or signed manifests for server configuration
+3. Scaffold the generic Paper setup publisher against the pinned protocol and
+   prove an end-to-end Maresme configuration flow.
+4. Add trust-on-first-use pinning or signed manifests for server configuration
    origin changes.
-4. Add plan-level rollback or a durable setup journal for stronger recovery from
+5. Add plan-level rollback or a durable setup journal for stronger recovery from
    failures between individually atomic steps.
-5. Add recognized publisher signing, macOS notarization, and app update delivery
+6. Add recognized publisher signing, macOS notarization, and app update delivery
    before treating the published development binaries as production-ready.
-6. Define the future Minecraft server plugin around the existing manifest
-   contract and compatibility status endpoint.
+7. Resolve and pin public host addresses during downloads to close the remaining
+   DNS-rebinding gap in URL policy.

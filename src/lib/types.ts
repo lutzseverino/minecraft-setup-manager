@@ -57,8 +57,8 @@ export type ManifestResourceSource =
     }>;
 
 export type ManifestResourceHashes = Readonly<{
-  sha256?: string | null;
-  sha512?: string | null;
+  sha256?: string;
+  sha512?: string;
 }>;
 
 export type SetupManifest = Readonly<{
@@ -74,7 +74,7 @@ export type SetupManifest = Readonly<{
     version: string;
     loader: {
       kind: ManifestLoaderKind;
-      version?: string | null;
+      version?: string;
     };
   };
   install: {
@@ -89,14 +89,14 @@ export type SetupManifest = Readonly<{
     target: "mods" | "resourcepacks" | "shaderpacks" | "config";
     required: boolean;
     profiles?: string[];
-    fileName?: string | null;
+    fileName: string;
     source: ManifestResourceSource;
     hashes?: ManifestResourceHashes;
   }>;
   serverEntry?: {
     name: string;
     address: string;
-  } | null;
+  };
 }>;
 
 export type SavedServerEntry = Readonly<{

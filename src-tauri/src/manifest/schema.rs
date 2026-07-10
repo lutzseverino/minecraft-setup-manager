@@ -10,10 +10,9 @@ pub struct SetupManifest {
     pub server: ManifestServer,
     pub minecraft: ManifestMinecraft,
     pub install: ManifestInstall,
-    #[serde(default)]
     pub profiles: Vec<ManifestPerformanceProfile>,
-    #[serde(default)]
     pub resources: Vec<ManifestResource>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub server_entry: Option<ManifestServerEntry>,
 }
 
@@ -35,6 +34,7 @@ pub struct ManifestMinecraft {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManifestLoader {
     pub kind: ManifestLoaderKind,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
 
@@ -73,6 +73,7 @@ pub struct ManifestResource {
     pub required: bool,
     #[serde(default)]
     pub profiles: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub file_name: Option<String>,
     pub source: ManifestResourceSource,
     #[serde(default)]
@@ -107,7 +108,9 @@ pub enum ManifestResourceSource {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManifestResourceHashes {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sha512: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sha256: Option<String>,
 }
 

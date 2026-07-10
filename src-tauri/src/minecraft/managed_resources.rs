@@ -180,7 +180,7 @@ fn resolve_resource(
 fn validate_unique_destinations(resources: &[ResolvedManagedResource]) -> Result<(), String> {
     let mut destinations = HashSet::new();
     for resource in resources {
-        if !destinations.insert((resource.target, resource.file_name.as_str())) {
+        if !destinations.insert((resource.target, resource.file_name.to_lowercase())) {
             return Err(format!(
                 "More than one selected resource resolves to {}/{}.",
                 target_dir_name(resource.target),
@@ -450,7 +450,6 @@ pub fn managed_file_name(resource: &ManifestResource) -> Option<String> {
     resource
         .file_name
         .clone()
-        .or_else(|| direct_source_file_name(&resource.source))
         .filter(|file_name| is_safe_file_name(file_name))
 }
 
@@ -459,21 +458,8 @@ pub fn can_sync_resource(resource: &ManifestResource) -> bool {
         ManifestResourceSource::Direct { .. } => {
             managed_file_name(resource).is_some() && has_expected_hash(&resource.hashes)
         }
-        ManifestResourceSource::Modrinth { .. } => true,
+        ManifestResourceSource::Modrinth { .. } => managed_file_name(resource).is_some(),
     }
-}
-
-fn direct_source_file_name(source: &ManifestResourceSource) -> Option<String> {
-    let ManifestResourceSource::Direct { url } = source else {
-        return None;
-    };
-
-    let parsed = reqwest::Url::parse(url).ok()?;
-    parsed
-        .path_segments()
-        .and_then(Iterator::last)
-        .filter(|segment| !segment.is_empty())
-        .map(ToString::to_string)
 }
 
 fn managed_file_path(

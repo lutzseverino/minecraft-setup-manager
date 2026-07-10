@@ -16,8 +16,10 @@ tauri-build = { version = "2", features = [] }
 fastnbt = "2.6.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_jcs = "0.2.0"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 sha2 = "0.10"
 tauri = { version = "2", features = [] }
 thiserror = "2"
 time = { version = "0.3", features = ["formatting"] }
+unicode-normalization = "0.1"

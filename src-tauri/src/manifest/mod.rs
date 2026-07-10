@@ -1,5 +1,6 @@
 pub mod fetch;
 pub mod fingerprint;
+pub mod parse;
 pub mod schema;
 pub mod validation;
 

@@ -86,10 +86,14 @@ fn redirect_policy(attempt: Attempt<'_>) -> Action {
         return attempt.error("too many redirects");
     }
 
-    if is_allowed_url(attempt.url()) {
+    let same_origin = attempt
+        .previous()
+        .last()
+        .is_some_and(|previous| has_same_origin(previous, attempt.url()));
+    if same_origin && is_allowed_url(attempt.url()) {
         attempt.follow()
     } else {
-        attempt.error("redirected to an insecure URL")
+        attempt.error("redirected outside the secure download origin")
     }
 }
 
@@ -105,19 +109,33 @@ fn validate_url(url: &str) -> Result<(), String> {
 
 fn is_allowed_url(url: &Url) -> bool {
     match url.scheme() {
-        "https" => true,
-        "http" => url
+        "https" => url
             .host_str()
-            .is_some_and(|host| host.eq_ignore_ascii_case("localhost") || is_loopback_ip(host)),
+            .is_some_and(|host| is_loopback_host(host) || !is_explicitly_non_public_host(host)),
+        "http" => url.host_str().is_some_and(is_loopback_host),
         _ => false,
     }
 }
 
-fn is_loopback_ip(host: &str) -> bool {
-    host.trim_start_matches('[')
-        .trim_end_matches(']')
-        .parse::<IpAddr>()
-        .is_ok_and(|ip| ip.is_loopback())
+fn has_same_origin(left: &Url, right: &Url) -> bool {
+    left.scheme() == right.scheme()
+        && left.host_str() == right.host_str()
+        && left.port_or_known_default() == right.port_or_known_default()
+}
+
+fn is_loopback_host(host: &str) -> bool {
+    let host = host.trim_start_matches('[').trim_end_matches(']');
+    host.eq_ignore_ascii_case("localhost")
+        || host.ends_with(".localhost")
+        || host.parse::<IpAddr>().is_ok_and(|ip| ip.is_loopback())
+}
+
+fn is_explicitly_non_public_host(host: &str) -> bool {
+    let host = host.trim_start_matches('[').trim_end_matches(']');
+    host.ends_with(".local")
+        || host
+            .parse::<IpAddr>()
+            .is_ok_and(crate::manifest::validation::is_non_public_ip)
 }
 
 #[cfg(test)]
@@ -136,5 +154,17 @@ mod tests {
     fn rejects_remote_http_and_non_http_schemes() {
         assert!(validate_url("http://example.com/file.jar").is_err());
         assert!(validate_url("file:///tmp/file.jar").is_err());
+        assert!(validate_url("https://192.168.1.10/file.jar").is_err());
+        assert!(validate_url("https://server.local/file.jar").is_err());
+    }
+
+    #[test]
+    fn redirects_must_keep_the_same_secure_origin() {
+        let source = Url::parse("https://example.com/file.jar").unwrap();
+        let same_origin = Url::parse("https://example.com/next.jar").unwrap();
+        let other_origin = Url::parse("https://cdn.example.com/file.jar").unwrap();
+
+        assert!(has_same_origin(&source, &same_origin));
+        assert!(!has_same_origin(&source, &other_origin));
     }
 }

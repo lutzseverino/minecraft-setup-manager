@@ -1,6 +1,10 @@
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
+use unicode_normalization::UnicodeNormalization;
+
+const MAX_PORTABLE_NAME_BYTES: usize = 200;
+
 pub fn validate_portable_component(value: &str, label: &str) -> Result<(), String> {
     if value.is_empty() || value != value.trim() {
         return Err(format!(
@@ -8,8 +12,10 @@ pub fn validate_portable_component(value: &str, label: &str) -> Result<(), Strin
         ));
     }
 
-    if value.ends_with('.')
-        || value.contains(['/', '\\', ':'])
+    if value != value.nfc().collect::<String>()
+        || value.len() > MAX_PORTABLE_NAME_BYTES
+        || value.ends_with('.')
+        || value.contains(['<', '>', ':', '"', '/', '\\', '|', '?', '*'])
         || value.chars().any(char::is_control)
         || !Path::new(value)
             .components()
@@ -78,6 +84,8 @@ mod tests {
             "NUL",
             "COM1.jar",
             "bad:",
+            "bad?.jar",
+            "bad|name",
         ] {
             assert!(validate_portable_component(name, "name").is_err(), "{name}");
         }

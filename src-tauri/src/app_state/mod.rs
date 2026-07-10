@@ -132,9 +132,8 @@ pub fn saved_manifest_snapshot(server_id: &str) -> Result<SetupManifest, String>
             path.display()
         )
     })?;
-    let manifest: SetupManifest = serde_json::from_slice(&contents)
+    let manifest = crate::manifest::parse::parse_manifest(&contents, &record.manifest_url)
         .map_err(|error| format!("The saved setup file is damaged: {error}"))?;
-    crate::manifest::validation::validate_manifest(&manifest, &record.manifest_url)?;
     let actual_fingerprint = crate::manifest::fingerprint::manifest_fingerprint(&manifest)?;
 
     if actual_fingerprint != expected_fingerprint

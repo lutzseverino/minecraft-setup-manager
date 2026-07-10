@@ -28,6 +28,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
+        with:
+          submodules: true
 
       - name: Install Linux desktop dependencies
         if: runner.os == 'Linux'

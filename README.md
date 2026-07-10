@@ -87,7 +87,9 @@ or overlapping resources, malformed hashes, invalid profile references, and
 inconsistent targets. Resources may be shared by every setup profile or assigned
 to named profiles such as low-power and high-quality configurations.
 
-See the [manifest guide](docs/manifest.md) for the complete format and an example.
+See the [protocol repository](https://github.com/lutzseverino/minecraft-setup-protocol)
+for the complete schema and semantics. The local [integration notes](docs/manifest.md)
+describe how this app consumes the pinned protocol release.
 
 ## Safety Model
 
@@ -112,6 +114,7 @@ You need Node.js 22, npm 11.6.2, the stable Rust toolchain, and the
 operating system.
 
 ```bash
+git submodule update --init
 npm ci
 npm run tauri:dev
 ```
@@ -152,6 +155,7 @@ effects, command handlers stay thin, and launchers implement adapter boundaries.
 | `src-tauri/src/launcher` | Launcher detection and profile adapters |
 | `src-tauri/src/minecraft` | Install planning, managed files, and conformance checks |
 | `src-tauri/src/app_state` | Saved servers, reviewed manifests, and installed state |
+| `protocol` | Pinned language-neutral schema, semantics, and conformance fixtures |
 
 The [architecture notes](docs/architecture.md) describe the dependency rules and
 the [implementation roadmap](docs/implementation-roadmap.md) records the
