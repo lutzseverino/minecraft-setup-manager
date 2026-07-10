@@ -1,0 +1,43 @@
+{
+  "version": "0.1.4",
+  "notes": "Native installers and application update artifacts for Minecraft Setup Manager.\n\n> [!WARNING]\n> Updater signatures let an installed copy verify future application updates. They do not replace Apple notarization, Apple Developer ID, or Windows publisher signing. These installers are not notarized or signed by a recognized publisher, so expect an operating-system security prompt.",
+  "pub_date": "2026-07-10T15:10:57.669Z",
+  "platforms": {
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRSVlyVk43cXdmQ2JUb0ZqK2t2aEVvVnBTaWE3Ym1NT2ZMbDdlR3J2SXdDaDdpVUViV3FydHRvT3BjZzByc2FoQlhaTnBHcnNaUGhBOGNzWTJFVUFPVCtOMjJOYUV5UXdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjk2MDQ4CWZpbGU6TWluZWNyYWZ0IFNldHVwIE1hbmFnZXIuYXBwLnRhci5nego4NE5iUkk4dDNwY29pQnY1WEJjdFJMQzhJaTdsemZVbE1EZ0RvUlh0ZWsyRG5DNTdESnNDeTlLN1g2UXlhZjc2NUR5d09WckpjcHdaYS90azBKOU9EUT09Cg==",
+      "url": "https://api.github.com/repos/lutzseverino/minecraft-setup-manager/releases/assets/472600031"
+    },
+    "darwin-aarch64-app": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRSVlyVk43cXdmQ2JUb0ZqK2t2aEVvVnBTaWE3Ym1NT2ZMbDdlR3J2SXdDaDdpVUViV3FydHRvT3BjZzByc2FoQlhaTnBHcnNaUGhBOGNzWTJFVUFPVCtOMjJOYUV5UXdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjk2MDQ4CWZpbGU6TWluZWNyYWZ0IFNldHVwIE1hbmFnZXIuYXBwLnRhci5nego4NE5iUkk4dDNwY29pQnY1WEJjdFJMQzhJaTdsemZVbE1EZ0RvUlh0ZWsyRG5DNTdESnNDeTlLN1g2UXlhZjc2NUR5d09WckpjcHdaYS90azBKOU9EUT09Cg==",
+      "url": "https://api.github.com/repos/lutzseverino/minecraft-setup-manager/releases/assets/472600031"
+    },
+    "linux-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRSVlyVk43cXdmQ1NkV1E3dDN5dTAyWkJZZFVIRnArTkZKbUJpT1VEb280L2JoRGpyeVE1TDg3L01EaUNpUDNXL2srcERLMWc1cE45ZklIWkFuK3dLRWY5SEJzcnNmQ2dnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjk2MTM2CWZpbGU6TWluZWNyYWZ0IFNldHVwIE1hbmFnZXJfMC4xLjRfYW1kNjQuQXBwSW1hZ2UKTkJBVVNKcCtBUTNTWE0zTFdHOGdIS25GbW9mYU5NR3RBUWJXYW12OTBwNW9FVmkrQlY2aFhKRGVZRzJmWE40SXB0QnRqZGM2bUdFeEpVaHFlM2NOQ3c9PQo=",
+      "url": "https://api.github.com/repos/lutzseverino/minecraft-setup-manager/releases/assets/472601362"
+    },
+    "linux-x86_64-appimage": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRSVlyVk43cXdmQ1NkV1E3dDN5dTAyWkJZZFVIRnArTkZKbUJpT1VEb280L2JoRGpyeVE1TDg3L01EaUNpUDNXL2srcERLMWc1cE45ZklIWkFuK3dLRWY5SEJzcnNmQ2dnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjk2MTM2CWZpbGU6TWluZWNyYWZ0IFNldHVwIE1hbmFnZXJfMC4xLjRfYW1kNjQuQXBwSW1hZ2UKTkJBVVNKcCtBUTNTWE0zTFdHOGdIS25GbW9mYU5NR3RBUWJXYW12OTBwNW9FVmkrQlY2aFhKRGVZRzJmWE40SXB0QnRqZGM2bUdFeEpVaHFlM2NOQ3c9PQo=",
+      "url": "https://api.github.com/repos/lutzseverino/minecraft-setup-manager/releases/assets/472601362"
+    },
+    "linux-x86_64-deb": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRSVlyVk43cXdmQ1pPN1lhbjk5T3lJTngxM09pQ1p1UDF1MHQzRHAzdU5ScXZpL3Y2bkRudkRxZk8xYnFjTWxjazByMTV0RjRYdkFzQjlhNkZlaDl1ZFJhQzJOYzJwSEF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjk2MTM2CWZpbGU6TWluZWNyYWZ0IFNldHVwIE1hbmFnZXJfMC4xLjRfYW1kNjQuZGViCkt5NVJCR24vRFVqbGdwRjFqZEhnYVh3Mzh2THhwUWU1dzJobVRCQjdKRDhjMzNxSTJnL21ZMVByTnkwYkYyNER2S2R4ZnFRaHA0YlB6TVNaeXRndkFBPT0K",
+      "url": "https://api.github.com/repos/lutzseverino/minecraft-setup-manager/releases/assets/472601337"
+    },
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRSVlyVk43cXdmQ2F5eGhVVVE1TFhLYTI0Yi9wK2dZcjNrZ3k5ak02bzQ2bXhrK1NidXVSL2o4a3lVQThpTkpBVzdDVkx6dzFtckk3TFgxWmdiYjVOZFNrUTYyYWhvUnd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjk2MjQwCWZpbGU6TWluZWNyYWZ0IFNldHVwIE1hbmFnZXJfMC4xLjRfeDY0LXNldHVwLmV4ZQozaG4yYzVUcW84R1I2TS8rVC9jZEtLTmpCMm16alpXbHFoZkdpeHZCK2hUVGplUTUrMTZKT29ld3UzZGhGTGpQRnFQcE5QZUIrYmFTVXJMdEl2VUpDdz09Cg==",
+      "url": "https://api.github.com/repos/lutzseverino/minecraft-setup-manager/releases/assets/472602870"
+    },
+    "windows-x86_64-nsis": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRSVlyVk43cXdmQ2F5eGhVVVE1TFhLYTI0Yi9wK2dZcjNrZ3k5ak02bzQ2bXhrK1NidXVSL2o4a3lVQThpTkpBVzdDVkx6dzFtckk3TFgxWmdiYjVOZFNrUTYyYWhvUnd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjk2MjQwCWZpbGU6TWluZWNyYWZ0IFNldHVwIE1hbmFnZXJfMC4xLjRfeDY0LXNldHVwLmV4ZQozaG4yYzVUcW84R1I2TS8rVC9jZEtLTmpCMm16alpXbHFoZkdpeHZCK2hUVGplUTUrMTZKT29ld3UzZGhGTGpQRnFQcE5QZUIrYmFTVXJMdEl2VUpDdz09Cg==",
+      "url": "https://api.github.com/repos/lutzseverino/minecraft-setup-manager/releases/assets/472602870"
+    },
+    "darwin-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRSVlyVk43cXdmQ1pudEhvdDZPbjF0dXp5aGMyWDFTZjVkTHNuTjVBc2JJYWJJWXQzUWo4ejF3NGFTem5CYU9vZ2gyb3JodHJ1cVRQL0Y0ODJiNDQrSStud1UxMS9DcEFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjk2MjUzCWZpbGU6TWluZWNyYWZ0IFNldHVwIE1hbmFnZXIuYXBwLnRhci5negpBWm51RkRicFNzc2JJcnhzWUVlRDJnWUlKQVNaSmsvcW5sUWNSaERkWXR3cDFoRjV4cjNVQm5LTHp0RHZlVnNHSUFBeTZUOFFJWlRYYlo2TTM3dGtEUT09Cg==",
+      "url": "https://api.github.com/repos/lutzseverino/minecraft-setup-manager/releases/assets/472603105"
+    },
+    "darwin-x86_64-app": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRSVlyVk43cXdmQ1pudEhvdDZPbjF0dXp5aGMyWDFTZjVkTHNuTjVBc2JJYWJJWXQzUWo4ejF3NGFTem5CYU9vZ2gyb3JodHJ1cVRQL0Y0ODJiNDQrSStud1UxMS9DcEFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgzNjk2MjUzCWZpbGU6TWluZWNyYWZ0IFNldHVwIE1hbmFnZXIuYXBwLnRhci5negpBWm51RkRicFNzc2JJcnhzWUVlRDJnWUlKQVNaSmsvcW5sUWNSaERkWXR3cDFoRjV4cjNVQm5LTHp0RHZlVnNHSUFBeTZUOFFJWlRYYlo2TTM3dGtEUT09Cg==",
+      "url": "https://api.github.com/repos/lutzseverino/minecraft-setup-manager/releases/assets/472603105"
+    }
+  }
+}
