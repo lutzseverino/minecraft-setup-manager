@@ -1,6 +1,6 @@
 [package]
 name = "minecraft-setup-manager"
-version = "0.1.2"
+version = "0.1.3"
 description = "Desktop setup manager for Minecraft client setups"
 authors = ["Minecraft Setup Manager contributors"]
 edition = "2021"

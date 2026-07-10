@@ -16,8 +16,9 @@
 12. Independently versioned protocol v1 with shared schema, semantics,
     conformance fixtures, and RFC 8785 fingerprints.
 13. Optional server setup-code redemption after backend-owned local validation.
-14. Stable SKlauncher 3.2 adapter implementation and isolated 3.2.18
-    clean-launcher round-trip validation for the standard Minecraft workspace.
+14. Stable SKlauncher 3.2 adapter implementation, live workspace-presence
+    enforcement, and isolated 3.2.18 clean-launcher round-trip validation for
+    the standard Minecraft workspace.
 
 ## Known Gaps
 

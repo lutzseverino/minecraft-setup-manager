@@ -40,23 +40,26 @@ impl SklauncherAdapter {
         plan: &InstallPlan,
         game_dir: &Path,
     ) -> Result<LauncherProfileValidation, String> {
+        validate_sklauncher_workspace()?;
         validate_sklauncher_profile_format()?;
         minecraft_profiles::validate_profile(plan, game_dir, &profile_id(plan))
     }
 }
 
 pub fn validate_profile_prerequisites(plan: &InstallPlan) -> Result<(), String> {
+    validate_sklauncher_workspace()?;
     validate_sklauncher_profile_format()?;
     minecraft_profiles::validate_profile_prerequisites(plan, LAUNCHER_NAME)
 }
 
 pub fn validate_base_prerequisites(plan: &InstallPlan) -> Result<(), String> {
+    validate_sklauncher_workspace()?;
     validate_sklauncher_profile_format()?;
     minecraft_profiles::validate_base_prerequisites(plan, LAUNCHER_NAME)
 }
 
 fn detection_at(minecraft_dir: &Path) -> LauncherDetection {
-    let data_dir = minecraft_dir.join("sklauncher");
+    let data_dir = sklauncher_data_dir(minecraft_dir);
     let log_path = data_dir.join("sklauncher_logs.txt");
 
     if log_path.is_file() {
@@ -84,6 +87,27 @@ fn detection_at(minecraft_dir: &Path) -> LauncherDetection {
             data_dir.display()
         ))
     }
+}
+
+fn validate_sklauncher_workspace() -> Result<(), String> {
+    let minecraft_dir = paths::default_minecraft_dir()?;
+    validate_sklauncher_workspace_at(&minecraft_dir)
+}
+
+fn validate_sklauncher_workspace_at(minecraft_dir: &Path) -> Result<(), String> {
+    let data_dir = sklauncher_data_dir(minecraft_dir);
+    if data_dir.is_dir() {
+        return Ok(());
+    }
+
+    Err(format!(
+        "SKlauncher data was not found at {}. Open SKlauncher 3.2 once, then try again.",
+        data_dir.display()
+    ))
+}
+
+fn sklauncher_data_dir(minecraft_dir: &Path) -> std::path::PathBuf {
+    minecraft_dir.join("sklauncher")
 }
 
 fn not_found_detection(detail: &str) -> LauncherDetection {
@@ -159,6 +183,21 @@ mod tests {
         ));
         assert!(log_detection.setup_supported);
         assert_eq!(log_detection.confidence, 0.95);
+    }
+
+    #[test]
+    fn requires_the_sklauncher_workspace_marker_at_use_time() {
+        let minecraft_dir = test_dir("live-workspace");
+        assert!(validate_sklauncher_workspace_at(&minecraft_dir).is_err());
+
+        let data_dir = sklauncher_data_dir(&minecraft_dir);
+        std::fs::create_dir_all(&data_dir).expect("create SKlauncher data dir");
+        assert!(validate_sklauncher_workspace_at(&minecraft_dir).is_ok());
+
+        std::fs::remove_dir_all(&data_dir).expect("remove SKlauncher data dir");
+        let error = validate_sklauncher_workspace_at(&minecraft_dir)
+            .expect_err("removed SKlauncher marker must fail validation");
+        assert!(error.contains(&data_dir.display().to_string()));
     }
 
     #[test]
