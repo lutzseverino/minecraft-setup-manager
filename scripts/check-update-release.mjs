@@ -46,7 +46,9 @@ const publicKey = validateUpdaterPublicKey(
   releaseConfig.plugins?.updater?.pubkey,
 );
 for (const artifact of requiredArtifacts) {
-  const bytes = await readFile(path.join(artifactDirectory, artifact.assetName));
+  const bytes = await readFile(
+    path.join(artifactDirectory, artifact.assetName),
+  );
   try {
     verifyUpdateSignature(bytes, artifact.signature, publicKey);
   } catch (error) {

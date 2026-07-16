@@ -115,7 +115,11 @@ export function ServerScreen({
         </AppCard>
 
         {error ? (
-          <StatusRow detail={error} label={t("server.errorLabel")} tone="error" />
+          <StatusRow
+            detail={error}
+            label={t("server.errorLabel")}
+            tone="error"
+          />
         ) : null}
 
         {resolved ? (
@@ -147,7 +151,9 @@ export function ServerScreen({
                   type="button"
                 >
                   <span>
-                    <span className="block font-medium">{server.displayName}</span>
+                    <span className="block font-medium">
+                      {server.displayName}
+                    </span>
                     <span className="mt-1 block text-muted-foreground">
                       {server.address}
                     </span>

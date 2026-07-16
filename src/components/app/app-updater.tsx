@@ -79,15 +79,15 @@ export function AppUpdater({ controller, updateBlocked }: AppUpdaterProps) {
     <section aria-label={t("applicationUpdate.title")}>
       <AppCard>
         <AppCardHeader>
-          <AppCardTitle>{
-            isError
+          <AppCardTitle>
+            {isError
               ? t("applicationUpdate.errorTitle")
               : isReadyToRestart
                 ? t("applicationUpdate.readyTitle")
                 : isAvailable
                   ? t("applicationUpdate.availableTitle")
-                  : t("applicationUpdate.updatingTitle")
-          }</AppCardTitle>
+                  : t("applicationUpdate.updatingTitle")}
+          </AppCardTitle>
           {version ? (
             <AppCardAction>
               <Badge variant="warning">v{version}</Badge>

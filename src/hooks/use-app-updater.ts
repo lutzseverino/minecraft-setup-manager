@@ -5,10 +5,7 @@ import {
   downloadAndInstallAppUpdate,
   relaunchApplication,
 } from "@/lib/tauri";
-import type {
-  AppUpdateDownloadProgress,
-  AppUpdateInfo,
-} from "@/lib/types";
+import type { AppUpdateDownloadProgress, AppUpdateInfo } from "@/lib/types";
 
 type AppUpdateStatus =
   | "unsupported"

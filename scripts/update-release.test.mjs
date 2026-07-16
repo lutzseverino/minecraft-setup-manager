@@ -123,7 +123,9 @@ test("rejects an updater target mapped to the wrong installer type", () => {
   const manifest = updaterManifest();
   const release = releaseFor(manifest);
   const entry = manifest.platforms["linux-x86_64-appimage"];
-  const asset = release.assets.find((candidate) => candidate.apiUrl === entry.url);
+  const asset = release.assets.find(
+    (candidate) => candidate.apiUrl === entry.url,
+  );
   const signatureAsset = release.assets.find(
     (candidate) => candidate.name === `${asset.name}.sig`,
   );
@@ -148,11 +150,17 @@ test("promotion cannot roll back or replace the same version", () => {
     updatePromotionDecision(current, updaterManifest("0.1.4")),
     "stale",
   );
-  assert.equal(updatePromotionDecision(current, structuredClone(current)), "unchanged");
+  assert.equal(
+    updatePromotionDecision(current, structuredClone(current)),
+    "unchanged",
+  );
 
   const changed = structuredClone(current);
   changed.platforms["darwin-aarch64-app"].signature += "changed";
-  assert.throws(() => updatePromotionDecision(current, changed), /different content/);
+  assert.throws(
+    () => updatePromotionDecision(current, changed),
+    /different content/,
+  );
 });
 
 test("promotion retries compare-and-swap and first-create conflicts only", () => {

@@ -54,14 +54,8 @@ release secrets, publish a tagged prerelease, and verify the update channel.
 
    ```bash
    npm ci
-   npm run check:version
+   npm run check
    npm run check:updater-config:release
-   npm run test:scripts
-   npm run test:frontend
-   npm run typecheck
-   npm run check:architecture
-   npm run check:docs
-   npm run build
    cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
    cargo test --manifest-path src-tauri/Cargo.toml --all-targets --all-features
    cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings

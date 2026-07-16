@@ -69,7 +69,7 @@ module.exports = {
         "Keep all Tauri guest APIs behind src/lib/tauri.ts so native contracts stay typed.",
       from: { path: "^src/(?!lib/tauri[.]ts)" },
       to: { path: "^node_modules/@tauri-apps/" },
-    }
+    },
   ],
   options: {
     doNotFollow: {

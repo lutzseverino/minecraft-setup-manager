@@ -53,14 +53,19 @@ for (let attempt = 1; attempt <= 3; attempt += 1) {
     },
   );
   if (response.status === 200 || response.status === 201) {
-    console.log(`Promoted ${nextManifest.version} to the application update channel.`);
+    console.log(
+      `Promoted ${nextManifest.version} to the application update channel.`,
+    );
     process.exit(0);
   }
   if (
     !isRetryablePromotionConflict(response.status, currentFile !== null) ||
     attempt === 3
   ) {
-    throw githubError(response, "Could not update the application update channel");
+    throw githubError(
+      response,
+      "Could not update the application update channel",
+    );
   }
 }
 
@@ -71,7 +76,10 @@ async function ensureBranch() {
     return;
   }
   if (currentRef.status !== 404) {
-    throw githubError(currentRef, "Could not inspect the update-channel branch");
+    throw githubError(
+      currentRef,
+      "Could not inspect the update-channel branch",
+    );
   }
 
   const created = await githubRequest(`/repos/${repository}/git/refs`, {
@@ -91,7 +99,10 @@ async function getChannelFile() {
     return null;
   }
   if (response.status !== 200) {
-    throw githubError(response, "Could not read the application update channel");
+    throw githubError(
+      response,
+      "Could not read the application update channel",
+    );
   }
 
   return response.data;
@@ -116,5 +127,7 @@ async function githubRequest(path, { method = "GET", body } = {}) {
 }
 
 function githubError(response, message) {
-  return new Error(`${message} (HTTP ${response.status}): ${response.data?.message ?? "unknown error"}`);
+  return new Error(
+    `${message} (HTTP ${response.status}): ${response.data?.message ?? "unknown error"}`,
+  );
 }

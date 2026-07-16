@@ -55,13 +55,17 @@ export function ProfileScreen({
     >
       <div className="grid gap-4">
         {error ? (
-          <StatusRow detail={error} label={t("profile.errorLabel")} tone="error" />
+          <StatusRow
+            detail={error}
+            label={t("profile.errorLabel")}
+            tone="error"
+          />
         ) : null}
         <AppToggleGroup
           className="grid w-full auto-rows-fr items-stretch gap-3 sm:grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]"
           onValueChange={(value) => {
             if (value) {
-              onProfileChange(value as PerformanceProfileId);
+              onProfileChange(value);
             }
           }}
           type="single"
@@ -79,9 +83,7 @@ export function ProfileScreen({
               >
                 <span className="flex h-full w-full flex-col items-start gap-3">
                   <Icon className="size-5" />
-                  <span className="text-sm font-semibold">
-                    {item.label}
-                  </span>
+                  <span className="text-sm font-semibold">{item.label}</span>
                   <span
                     className="text-sm font-normal text-muted-foreground"
                     data-slot="choice-copy"

@@ -1,5 +1,5 @@
-import { HammerIcon, PlayIcon } from "lucide-react";
 import type { TFunction } from "i18next";
+import { HammerIcon, PlayIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { AppButton } from "@/components/app/app-button";

@@ -35,7 +35,9 @@ function parseAppVersion(value, description) {
   const version = requireString(value, description);
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
   if (!match) {
-    throw new Error(`${description} must use the numeric PROJECT.MAJOR.MINOR form.`);
+    throw new Error(
+      `${description} must use the numeric PROJECT.MAJOR.MINOR form.`,
+    );
   }
 
   return match.slice(1).map(Number);
@@ -44,12 +46,16 @@ function parseAppVersion(value, description) {
 function decodeTauriEnvelope(value, description, expectedPrefix) {
   const encoded = requireString(value, description);
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) {
-    throw new Error(`${description} must be one base64-encoded Tauri envelope.`);
+    throw new Error(
+      `${description} must be one base64-encoded Tauri envelope.`,
+    );
   }
 
   const decoded = Buffer.from(encoded, "base64").toString("utf8");
   if (!decoded.startsWith(expectedPrefix)) {
-    throw new Error(`${description} does not contain the expected Tauri envelope.`);
+    throw new Error(
+      `${description} does not contain the expected Tauri envelope.`,
+    );
   }
 
   return encoded;
@@ -63,7 +69,9 @@ export function validateUpdaterPublicKey(value) {
   );
   let publicKey;
   try {
-    publicKey = PublicKey.decode(Buffer.from(encoded, "base64").toString("utf8"));
+    publicKey = PublicKey.decode(
+      Buffer.from(encoded, "base64").toString("utf8"),
+    );
   } catch (error) {
     throw new Error(`Updater public key is not a valid Minisign key: ${error}`);
   }
@@ -101,7 +109,9 @@ export function validateUpdaterConfig(
 
   const updater = releaseConfig.plugins?.updater;
   if (!isObject(updater)) {
-    throw new Error("The release Tauri config must configure the updater plugin.");
+    throw new Error(
+      "The release Tauri config must configure the updater plugin.",
+    );
   }
 
   if (
@@ -143,11 +153,10 @@ export function validateUpdateRelease(manifest, release, expectedTag) {
     );
   }
 
-  if (
-    release.tagName !== expectedTag ||
-    typeof release.isDraft !== "boolean"
-  ) {
-    throw new Error("The updater manifest must be validated against its release.");
+  if (release.tagName !== expectedTag || typeof release.isDraft !== "boolean") {
+    throw new Error(
+      "The updater manifest must be validated against its release.",
+    );
   }
   if (expectedVersion.startsWith("0.") && release.isPrerelease !== true) {
     throw new Error("Project-zero releases must remain GitHub prereleases.");
@@ -201,17 +210,25 @@ export function validateUpdateRelease(manifest, release, expectedTag) {
 
     const asset = assetsByUrl.get(url);
     if (!asset || typeof asset.name !== "string") {
-      throw new Error(`${target} does not reference an asset in ${expectedTag}.`);
+      throw new Error(
+        `${target} does not reference an asset in ${expectedTag}.`,
+      );
     }
     if (!updateArtifactNamePatterns[target].test(asset.name)) {
-      throw new Error(`${target} references the wrong installer type: ${asset.name}.`);
+      throw new Error(
+        `${target} references the wrong installer type: ${asset.name}.`,
+      );
     }
     if (asset.state !== "uploaded" || !(asset.size > 0)) {
-      throw new Error(`${target} does not reference a complete uploaded asset.`);
+      throw new Error(
+        `${target} does not reference a complete uploaded asset.`,
+      );
     }
     const signatureAsset = assetsByName.get(`${asset.name}.sig`);
     if (!signatureAsset) {
-      throw new Error(`${target} is missing the published ${asset.name}.sig asset.`);
+      throw new Error(
+        `${target} is missing the published ${asset.name}.sig asset.`,
+      );
     }
     if (
       signatureAsset.state !== "uploaded" ||

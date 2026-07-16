@@ -1,7 +1,12 @@
 import { TerminalIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { AppCard, AppCardContent, AppCardHeader, AppCardTitle } from "./app-card";
+import {
+  AppCard,
+  AppCardContent,
+  AppCardHeader,
+  AppCardTitle,
+} from "./app-card";
 
 type ProgressLogProps = Readonly<{
   entries: string[];

@@ -21,8 +21,8 @@ import {
 import { ScreenShell } from "@/components/app/screen-shell";
 import { StatusRow } from "@/components/app/status-row";
 import { launcherOptions } from "@/config/setup-options";
-import { cn } from "@/lib/utils";
 import type { LauncherDetection, LauncherKind } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 type LauncherScreenProps = Readonly<{
   detections: LauncherDetection[];
@@ -33,7 +33,10 @@ type LauncherScreenProps = Readonly<{
   onSelect: (launcher: LauncherKind) => void;
 }>;
 
-function detectionMeta(detection: LauncherDetection, t: (key: string) => string) {
+function detectionMeta(
+  detection: LauncherDetection,
+  t: (key: string) => string,
+) {
   if (detection.status === "detected") {
     return {
       Icon: CheckCircle2Icon,
@@ -125,8 +128,7 @@ export function LauncherScreen({
                 const Icon = option.Icon;
                 const meta = detectionMeta(detection, t);
                 const unavailable =
-                  !detection.setupSupported ||
-                  detection.status === "not_found";
+                  !detection.setupSupported || detection.status === "not_found";
 
                 return (
                   <AppToggleGroupItem

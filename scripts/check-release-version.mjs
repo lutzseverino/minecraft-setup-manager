@@ -42,7 +42,9 @@ const versions = new Map([
   ["src-tauri/tauri.conf.json", tauriConfig.version],
 ]);
 const expectedVersion = packageJson.version;
-const mismatches = [...versions].filter(([, version]) => version !== expectedVersion);
+const mismatches = [...versions].filter(
+  ([, version]) => version !== expectedVersion,
+);
 
 if (mismatches.length > 0) {
   const details = mismatches
@@ -52,7 +54,9 @@ if (mismatches.length > 0) {
 }
 
 const releaseTag =
-  process.env.GITHUB_REF_TYPE === "tag" ? process.env.GITHUB_REF_NAME : undefined;
+  process.env.GITHUB_REF_TYPE === "tag"
+    ? process.env.GITHUB_REF_NAME
+    : undefined;
 
 if (releaseTag && releaseTag !== `v${expectedVersion}`) {
   throw new Error(

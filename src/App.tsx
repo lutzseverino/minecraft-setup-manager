@@ -4,8 +4,8 @@ import { AppTooltipProvider } from "@/components/app/app-tooltip";
 import { AppUpdater } from "@/components/app/app-updater";
 import { Stepper, StepperStep } from "@/components/app/stepper";
 import { wizardSteps } from "@/config/setup-options";
-import { useSetupWizard } from "@/hooks/use-setup-wizard";
 import { useAppUpdater } from "@/hooks/use-app-updater";
+import { useSetupWizard } from "@/hooks/use-setup-wizard";
 import "@/i18n";
 import type { WizardStepId } from "@/lib/types";
 import { DiagnosticsScreen } from "@/screens/diagnostics-screen";
@@ -30,10 +30,7 @@ export default function App() {
     <AppTooltipProvider>
       <div className="min-h-screen">
         <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
-          <AppUpdater
-            controller={updater}
-            updateBlocked={setupIsMutating}
-          />
+          <AppUpdater controller={updater} updateBlocked={setupIsMutating} />
           <header className="border-b-2 border-b-[var(--bevel-line)] pb-6">
             <Stepper aria-label={t("steps.ariaLabel")}>
               {wizardSteps.map((item, index) => (

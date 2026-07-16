@@ -18,9 +18,9 @@ import type {
   ResolvedServerManifest,
   ResolveServerManifestRequest,
   SavedServerEntry,
-  StartInstallRequest,
-  SetupManifest,
   SetupAttestationReceipt,
+  SetupManifest,
+  StartInstallRequest,
   ValidationResult,
 } from "@/lib/types";
 
@@ -217,7 +217,11 @@ export async function detectLaunchers() {
     },
   ];
 
-  return invokeOrFallback<LauncherDetection[]>("detect_launchers", {}, fallback);
+  return invokeOrFallback<LauncherDetection[]>(
+    "detect_launchers",
+    {},
+    fallback,
+  );
 }
 
 export async function listSavedServers() {
@@ -378,9 +382,7 @@ export async function getInstallPlan(request: InstallPlanRequest) {
         .filter((resource) => resource.required)
         .map((resource) => resource.name),
       optionalMods: [],
-      warnings: [
-        "Open the desktop app to create folders on this computer.",
-      ],
+      warnings: ["Open the desktop app to create folders on this computer."],
     },
   );
 }

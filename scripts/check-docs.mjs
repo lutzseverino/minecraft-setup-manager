@@ -26,10 +26,14 @@ async function markdownFilesIn(directory) {
 function localLinkTargets(contents, sourcePath) {
   return [...contents.matchAll(markdownLinkPattern)]
     .map((match) => match[1].replace(/^<|>$/g, ""))
-    .filter((target) => !target.startsWith("#") && !/^[a-z][a-z+.-]*:/i.test(target))
+    .filter(
+      (target) => !target.startsWith("#") && !/^[a-z][a-z+.-]*:/i.test(target),
+    )
     .map((target) => target.split(/[?#]/, 1)[0])
     .filter(Boolean)
-    .map((target) => path.resolve(path.dirname(sourcePath), decodeURIComponent(target)));
+    .map((target) =>
+      path.resolve(path.dirname(sourcePath), decodeURIComponent(target)),
+    );
 }
 
 async function pathExists(targetPath) {
@@ -75,7 +79,9 @@ async function checkDirectoryIndex(directory) {
     const entryPath = path.join(directory, entry.name);
     const expectedTarget = entry.isDirectory()
       ? path.join(entryPath, "README.md")
-      : entry.isFile() && entry.name.endsWith(".md") && entry.name !== "README.md"
+      : entry.isFile() &&
+          entry.name.endsWith(".md") &&
+          entry.name !== "README.md"
         ? entryPath
         : undefined;
 
@@ -112,5 +118,7 @@ if (problems.length > 0) {
   );
   process.exitCode = 1;
 } else {
-  console.log(`Documentation links and indexes are valid (${markdownFiles.length} files).`);
+  console.log(
+    `Documentation links and indexes are valid (${markdownFiles.length} files).`,
+  );
 }

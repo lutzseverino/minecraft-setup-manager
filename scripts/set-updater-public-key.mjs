@@ -9,7 +9,10 @@ if (!publicKeyPath) {
   );
 }
 
-const configUrl = new URL("../src-tauri/tauri.release.conf.json", import.meta.url);
+const configUrl = new URL(
+  "../src-tauri/tauri.release.conf.json",
+  import.meta.url,
+);
 const [publicKey, configText] = await Promise.all([
   readFile(publicKeyPath, "utf8"),
   readFile(configUrl, "utf8"),

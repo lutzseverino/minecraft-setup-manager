@@ -6,12 +6,16 @@
   "type": "module",
   "scripts": {
     "build": "tsc -b && vite build",
+    "check": "npm run lint && npm run lint:ts && npm run typecheck && npm run test:frontend && npm run test:scripts && npm run check:architecture && npm run check:docs && npm run check:updater-config && npm run check:version && npm run build",
     "check:architecture": "depcruise --config dependency-cruiser.cjs src",
     "check:docs": "node scripts/check-docs.mjs",
     "check:updater-config": "node scripts/check-updater-config.mjs --allow-placeholder",
     "check:updater-config:release": "node scripts/check-updater-config.mjs",
     "check:version": "node scripts/check-release-version.mjs",
     "dev": "vite",
+    "format": "biome check . --write",
+    "lint": "biome check .",
+    "lint:ts": "eslint --config eslint.config.mjs --max-warnings 0 .",
     "set:updater-public-key": "node scripts/set-updater-public-key.mjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
@@ -19,6 +23,9 @@
     "test:frontend": "vitest run",
     "test:scripts": "node --test scripts/*.test.mjs",
     "typecheck": "tsc -b"
+  },
+  "engines": {
+    "node": ">=24"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
@@ -41,12 +48,18 @@
     "vite": "^8.0.16"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.1",
     "@tauri-apps/cli": "^2.9.4",
     "@testing-library/react": "^16.3.2",
     "@threema/wasm-minisign-verify": "^0.2.0-rc.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "8.61.1",
+    "@typescript-eslint/parser": "8.61.1",
     "dependency-cruiser": "^17.3.0",
+    "eslint": "9.39.1",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.3",
     "jsdom": "^29.1.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"

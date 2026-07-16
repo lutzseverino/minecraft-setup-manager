@@ -3,10 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAppUpdater } from "@/hooks/use-app-updater";
 
+type TauriModule = typeof import("@/lib/tauri");
+
 const tauri = vi.hoisted(() => ({
-  checkForAppUpdate: vi.fn(),
-  downloadAndInstallAppUpdate: vi.fn(),
-  relaunchApplication: vi.fn(),
+  checkForAppUpdate: vi.fn<TauriModule["checkForAppUpdate"]>(),
+  downloadAndInstallAppUpdate:
+    vi.fn<TauriModule["downloadAndInstallAppUpdate"]>(),
+  relaunchApplication: vi.fn<TauriModule["relaunchApplication"]>(),
 }));
 
 vi.mock("@/lib/tauri", () => tauri);

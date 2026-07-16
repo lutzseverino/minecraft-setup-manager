@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { fallbackDetections } from "@/config/setup-options";
@@ -47,9 +47,8 @@ export function useSetupWizard() {
   const [plan, setPlan] = useState<InstallPlan | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
   const [isBuildingPlan, setIsBuildingPlan] = useState(false);
-  const [installProgress, setInstallProgress] = useState<InstallProgress | null>(
-    null,
-  );
+  const [installProgress, setInstallProgress] =
+    useState<InstallProgress | null>(null);
   const [isInstalling, setIsInstalling] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] =
@@ -66,25 +65,15 @@ export function useSetupWizard() {
     [launcher, profile, resolvedServer],
   );
 
-  useEffect(() => {
-    void refreshSavedServers();
-  }, []);
-
-  useEffect(() => {
-    if (step === "launcher") {
-      void refreshDetections();
-    }
-  }, [step]);
-
-  async function refreshSavedServers() {
+  const refreshSavedServers = useCallback(async () => {
     try {
       setSavedServers(await listSavedServers());
     } catch (error) {
       setResolveError(errorMessage(error));
     }
-  }
+  }, []);
 
-  async function refreshDetections() {
+  const refreshDetections = useCallback(async () => {
     setLauncherError(null);
     try {
       const nextDetections = await detectLaunchers();
@@ -112,7 +101,17 @@ export function useSetupWizard() {
       setLauncherError(errorMessage(error));
       setDetections(fallbackDetections);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    void refreshSavedServers();
+  }, [refreshSavedServers]);
+
+  useEffect(() => {
+    if (step === "launcher") {
+      void refreshDetections();
+    }
+  }, [refreshDetections, step]);
 
   function clearWork() {
     setPlan(null);

@@ -1,6 +1,10 @@
 import { PublicKey, Signature } from "@threema/wasm-minisign-verify";
 
-export function verifyUpdateSignature(bytes, encodedSignature, encodedPublicKey) {
+export function verifyUpdateSignature(
+  bytes,
+  encodedSignature,
+  encodedPublicKey,
+) {
   const publicKey = PublicKey.decode(
     Buffer.from(encodedPublicKey, "base64").toString("utf8"),
   );
