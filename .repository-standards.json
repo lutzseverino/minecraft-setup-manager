@@ -1,6 +1,9 @@
 {
-  "standards-version": 1,
-  "standards-release": "1.0.3",
+  "standards-version": 2,
+  "standards-release": "1.1.0",
+  "boundaries": [
+    {"path": ".", "type": "repository", "title": "Minecraft Setup Manager"}
+  ],
   "profiles": ["common", "documentation", "node-npm", "vite-react", "tauri"],
   "variables": {},
   "local-fragments": {
